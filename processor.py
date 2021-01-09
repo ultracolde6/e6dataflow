@@ -1,10 +1,11 @@
 import numpy as np
-from datamodel import InputParamLogger
+from datamodel import DataTool
 from utils import to_list, shot_to_loop_and_point
 
 
-class Processor(InputParamLogger):
+class Processor(DataTool):
     def __init__(self, *, processor_name, datamodel):
+        super(Processor, self).__init__(datatool_name=processor_name)
         self.processor_name = processor_name
         self.datamodel = datamodel
 
@@ -18,7 +19,9 @@ class CountsProcessor(Processor):
         self.frame_datafield_name = frame_datafield_name
         self.result_datafield_name = result_datafield_name
         self.roi_slice_list = to_list(roi_slice_list)
-        self.datamodel
+        self.datamodel = datamodel
+
+        results_datafield =
 
     def process(self, shot_num):
         frame = self.datamodel.get_shot_data(self.frame_datafield_name, shot_num)

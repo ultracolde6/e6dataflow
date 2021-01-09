@@ -28,11 +28,12 @@ class DataModel:
 
         self.data_dict = dict()
         self.data_dict['datastream'] = dict()
+        self.data_dict['shot_datafield'] = dict()
 
         self.datastream_dict = dict()
         self.shot_datafield_dict = dict()
 
-    def check_datatool_existence(self, datatool, target_container_dict, datatool_type):
+    def add_and_verify_datatool(self, datatool, target_container_dict, datatool_type):
         datatool_name = datatool.datatool_name
         new_input_param_dict = datatool.input_param_dict
         datatool_exists = datatool_name in self.data_dict[datatool_type]
@@ -48,27 +49,22 @@ class DataModel:
                 print(f'WARNING, old and new {datatool_type} differ. Using old {datatool_type} information.'
                       f'Hard reset required to update {datatool_type} parameters.')
 
-    def add_datastream(self, datastream_name, file_prefix):
+    def create_datastream(self, datastream_name, file_prefix):
         datastream = DataStream(datastream_name=datastream_name, daily_path=self.daily_path,
                                 run_name=self.run_name, file_prefix=file_prefix)
-        datastream_input_param_dict = datastream.input_param_dict
-        datastream_exists = datastream_name in self.data_dict['datastreams']
-        if not datastream_exists:
-            self.data_dict['datastream'][datastream_name] = datastream_input_param_dict
-            self.datastream_dict[datastream_name] = datastream
-        else:
-            print(f'datastream "{datastream_name}" already exists in datamodel.')
-            new_input_param_dict = datastream_input_param_dict
-            old_input_param_dict = self.data_dict['datastreams'][datastream_name]
-            if new_input_param_dict == old_input_param_dict:
-                print('Old and new datastreams have the same paramaters')
-            else:
-                print('WARNING, old and new datastreams differ. Using old datastream information.'
-                      'Hard reset required to update datastream parameters.')
+        self.add_datastream(datastream)
+
+    def add_datastream(self, datastream):
+        self.add_and_verify_datatool(datatool=datastream, target_container_dict=self.datastream_dict,
+                                     datatool_type='datastream')
+
+    def add_shot_datafield(self, datafield):
+        self.add_and_verify_datatool(datatool=datafield, target_container_dict=self.shot_datafield_dict,
+                                     datatool_type='shot_datafield')
 
     def get_shot_data(self, shot_datafield_name, shot_num):
         shot_datafield = self.shot_datafield_dict[shot_datafield_name]
-        data = shot_datafield.get_data[shot_num]
+        data = shot_datafield.get_data(shot_num)
         return data
 
     def set_shot_data(self, shot_datafield_name, shot_num, data):

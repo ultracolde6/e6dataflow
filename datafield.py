@@ -1,8 +1,9 @@
-from datamodel import InputParamLogger
+from datamodel import DataTool
 
 
-class DataField(InputParamLogger):
+class DataField(DataTool):
     def __init__(self, *, datafield_name, datamodel):
+        super(DataField, self).__init__(datatool_name=datafield_name)
         self.datafield_name = datafield_name
         self.datamodel = datamodel
 
@@ -14,13 +15,13 @@ class ShotDataField(DataField):
     def get_data(self, shot_num):
         raise NotImplementedError
 
-    def set_data(self, shot_num):
+    def set_data(self, shot_num, data):
         raise NotImplementedError
 
 
-class DataStreamShotDataField(ShotDataField):
+class DataStreamDataField(ShotDataField):
     def __init__(self, *, datafield_name, datamodel, datastream_name, h5_subpath, h5_dataset_name):
-        super(DataStreamShotDataField, self).__init__(datafield_name=datafield_name, datamodel=datamodel)
+        super(DataStreamDataField, self).__init__(datafield_name=datafield_name, datamodel=datamodel)
         self.datastream_name = datastream_name
         self.h5_subpath = h5_subpath
         self.h5_dataset_name = h5_dataset_name
@@ -35,6 +36,22 @@ class DataStreamShotDataField(ShotDataField):
         data = h5_group[self.h5_dataset_name]
         return data
 
-    def set_data(self, shot_num):
+    def set_data(self, shot_num, data):
         raise UserWarning('Cannot set data in datastream datafields. These datafields represent raw data which should'
                           'not be manipulated')
+
+
+class ProcessedDataField(ShotDataField):
+    def __init__(self, *, datafield_name, datamodel):
+        super(ProcessedDataField, self).__init__(datafield_name=datafield_name, datamodel=datamodel)
+        self.datamodel.data_dict['shot_datafield'][self.datafield_name] = dict()
+        self.datafield_dict = self.datamodel.data_dict['shot_datafield'][self.datafield_name]
+
+    def get_data(self, shot_num):
+        shot_key = f'shot_{shot_num:05d}'
+        data = self.datafield_dict[shot_key]
+        return data
+
+    def set_data(self, shot_num, data):
+        shot_key = f'shot_{shot_num:05d}'
+        self.datafield_dict[shot_key] = data
