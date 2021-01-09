@@ -30,6 +30,23 @@ class DataModel:
         self.data_dict['datastream'] = dict()
 
         self.datastream_dict = dict()
+        self.shot_datafield_dict = dict()
+
+    def check_datatool_existence(self, datatool, target_container_dict, datatool_type):
+        datatool_name = datatool.datatool_name
+        new_input_param_dict = datatool.input_param_dict
+        datatool_exists = datatool_name in self.data_dict[datatool_type]
+        if not datatool_exists:
+            self.data_dict[datatool_type][datatool_name] = new_input_param_dict
+            target_container_dict[datatool_name] = datatool
+        else:
+            print(f'{datatool_type} "{datatool_name}" already exists in datamodel.')
+            old_input_param_dict = self.data_dict[datatool_type][datatool_name]
+            if new_input_param_dict == old_input_param_dict:
+                print(f'Old and new {datatool_type} have the same paramaters')
+            else:
+                print(f'WARNING, old and new {datatool_type} differ. Using old {datatool_type} information.'
+                      f'Hard reset required to update {datatool_type} parameters.')
 
     def add_datastream(self, datastream_name, file_prefix):
         datastream = DataStream(datastream_name=datastream_name, daily_path=self.daily_path,
@@ -49,10 +66,24 @@ class DataModel:
                 print('WARNING, old and new datastreams differ. Using old datastream information.'
                       'Hard reset required to update datastream parameters.')
 
+    def get_shot_data(self, shot_datafield_name, shot_num):
+        shot_datafield = self.shot_datafield_dict[shot_datafield_name]
+        data = shot_datafield.get_data[shot_num]
+        return data
+
+    def set_shot_data(self, shot_datafield_name, shot_num, data):
+        shot_datafield = self.shot_datafield_dict[shot_datafield_name]
+        shot_datafield.set_data(shot_num, data)
 
 
-class DataStream(InputParamLogger):
+class DataTool(InputParamLogger):
+    def __init__(self, *, datatool_name):
+        self.datatool_name = datatool_name
+
+
+class DataStream(DataTool):
     def __init__(self, *, datastream_name, daily_path, run_name, file_prefix):
+        super(DataStream, self).__init__(datatool_name=datastream_name)
         self.datastream_name = datastream_name
         self.daily_path = daily_path
         self.run_name = run_name
