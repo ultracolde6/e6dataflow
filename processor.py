@@ -1,5 +1,6 @@
 import numpy as np
 from datamodel import DataTool
+from datafield import ProcessedDataField
 from utils import to_list, shot_to_loop_and_point
 
 
@@ -14,27 +15,44 @@ class Processor(DataTool):
 
 
 class CountsProcessor(Processor):
-    def __init__(self, *, processor_name, datamodel, frame_datafield_name, result_datafield_name, roi_slice_list):
+    def __init__(self, *, processor_name, datamodel, frame_datafield_name, result_datafield_name, roi_slice):
         super(CountsProcessor, self).__init__(processor_name=processor_name, datamodel=datamodel)
         self.frame_datafield_name = frame_datafield_name
         self.result_datafield_name = result_datafield_name
-        self.roi_slice_list = to_list(roi_slice_list)
-        self.datamodel = datamodel
+        self.roi_slice = roi_slice
 
-        results_datafield =
+        results_datafield = ProcessedDataField(datafield_name=self.result_datafield_name,
+                                                    datamodel=self.datamodel)
+        self.datamodel.add_shot_datafield(results_datafield)
 
     def process(self, shot_num):
         frame = self.datamodel.get_shot_data(self.frame_datafield_name, shot_num)
-        if len(self.roi_slice_list) > 1:
-            if len(self.roi_slice_list) != self.datamodel.num_points:
-                raise ValueError(f'Length of roi_slice ({len(self.roi_slice_list):d}) is not equal to datamodel'
-                                 f'num_points ({self.datamodel.num_points})')
-            loop_num, point_num = shot_to_loop_and_point(shot_num, self.datamodel.num_points)
-            roi_slice = self.roi_slice_list[point_num]
-            roi_frame = frame[roi_slice]
-            counts = np.nansum(roi_frame)
-        else:
-            roi_slice = self.roi_slice_list[0]
-            roi_frame = frame[roi_slice]
-            counts = np.nansum(roi_frame)
+        roi_frame = frame[self.roi_slice]
+        counts = np.nansum(roi_frame)
         self.datamodel.set_shot_data(self.result_datafield_name, shot_num, counts)
+
+
+class MultiCountsProcessor(Processor):
+    def __init__(self, *, processor_name, datamodel, frame_datafield_name, result_datafield_name_list, roi_slice_array):
+        super(MultiCountsProcessor, self).__init__(processor_name=processor_name, datamodel=datamodel)
+        self.frame_datafield_name = frame_datafield_name
+        self.result_datafield_name_list = result_datafield_name_list
+        self.roi_slice_array = roi_slice_array
+        self.num_points = self.datamodel.num_points
+        self.num_regions = len(self.result_datafield_name_list)
+        if roi_slice_array.shape is not (self.num_points, self.num_regions):
+            raise ValueError(f'Shape of roi_slice_array much match number of points and number of output datafields.'
+                             f' Shape must be ({self.num_points}, {self.num_regions})')
+        for result_datafield_name in self.result_datafield_name_list:
+            results_datafield = ProcessedDataField(datafield_name=result_datafield_name,
+                                                   datamodel=self.datamodel)
+            datamodel.add_shot_datafield(results_datafield)
+
+    def process(self, shot_num):
+        frame = self.datamodel.get_shot_data(self.frame_datafield_name, shot_num)
+        loop, point = shot_to_loop_and_point(shot_num, self.datamodel.num_points)
+        for roi_num, result_datafield_name in enumerate(self.result_datafield_name_list):
+            roi_slice = self.roi_slice_array[point, roi_num]
+            roi_frame = frame[roi_slice]
+            counts = np.nansum(roi_frame)
+            self.datamodel.set_shot_data(result_datafield_name, shot_num, counts)

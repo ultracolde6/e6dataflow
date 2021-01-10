@@ -44,8 +44,8 @@ class DataStreamDataField(ShotDataField):
 class ProcessedDataField(ShotDataField):
     def __init__(self, *, datafield_name, datamodel):
         super(ProcessedDataField, self).__init__(datafield_name=datafield_name, datamodel=datamodel)
-        self.datamodel.data_dict['shot_datafield'][self.datafield_name] = dict()
-        self.datafield_dict = self.datamodel.data_dict['shot_datafield'][self.datafield_name]
+        self.datamodel.data_dict['shot_data'][self.datafield_name] = dict()
+        self.datafield_dict = self.datamodel.data_dict['shot_data'][self.datafield_name]
 
     def get_data(self, shot_num):
         shot_key = f'shot_{shot_num:05d}'
