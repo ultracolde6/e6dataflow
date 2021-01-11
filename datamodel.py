@@ -121,6 +121,20 @@ class DataTool(InputParamLogger):
     def __init__(self, *, datatool_name):
         self.datatool_name = datatool_name
         self.updated = True
+        self.tool_data = dict()
+
+    @classmethod
+    def reload(cls, old_input_param_dict, old_tool_specific_data):
+        new_datatool = InputParamLogger.rebuild(old_input_param_dict)
+        cls.reload_tool_data(new_datatool=new_datatool, old_tool_specific_data=old_tool_specific_data)
+        return new_datatool
+
+    @staticmethod
+    def reload_tool_data(new_datatool, old_tool_specific_data):
+        pass
+
+    def save_tool_data(self):
+        pass
 
 
 class DataStream(DataTool):
