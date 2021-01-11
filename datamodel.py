@@ -8,41 +8,58 @@ class OverwriteMode(Enum):
     KEEP_NEW = 1
 
 
-class InputParamLogger:
-    def __new__(cls, *args, **kwargs):
-        input_param_dict = {'args': args, 'kwargs': kwargs, 'class': cls}
-        obj = super(InputParamLogger, cls).__new__(cls)
-        obj.input_param_dict = input_param_dict
+class Reloadable:
+    def __new__(cls, name, *args, **kwargs):
+        input_param_dict = {'name':name, 'args': args, 'kwargs': kwargs, 'class': cls}
+        object_data_dict = dict()
+        rebuild_dict = {'input_param_dict':input_param_dict,
+                        'object_data_dict':object_data_dict}
+        obj = super(Reloadable, cls).__new__(cls)
+        obj.name = name
+        obj.rebuild_dict = rebuild_dict
         return obj
 
     @staticmethod
-    def rebuild(input_param_dict, class_specific_data):
+    def rebuild(rebuild_dict):
+        input_param_dict = rebuild_dict['input_param_dict']
         rebuild_class = input_param_dict['class']
-        args = input_param_dict['args']
-        kwargs = input_param_dict['kwargs']
-        new_obj = rebuild_class(*args, **kwargs)
-        if class_specific_data is not None:
-            new_obj = rebuild_class.class_specific_rebuild(new_obj, class_specific_data)
+        rebuild_name = input_param_dict['name']
+        rebuild_args = input_param_dict['args']
+        rebuild_kwargs = input_param_dict['kwargs']
+        new_obj = rebuild_class(rebuild_name, *rebuild_args, **rebuild_kwargs)
+
+        object_data_dict = rebuild_dict['object_data_dict']
+        new_obj = rebuild_class.rebuild_object_data(new_obj, object_data_dict)
         return new_obj
-    
+
     @staticmethod
-    def class_specific_rebuild(obj, class_specific_data):
+    def rebuild_object_data(obj, object_data_dict):
         return obj
 
+    def package_object_data(self):
+        return self.rebuild_dict
 
-class DataTool(InputParamLogger):
+
+class DataTool(Reloadable):
     DATASTREAM = 'datastream'
     PROCESSOR = 'processor'
     SHOT_DATAFIELD = 'shot_datafield'
 
-    def __init__(self, *, datatool_name):
-        self.datatool_name = datatool_name
+    def __init__(self, *, name):
         self.updated = True
-        self.tool_data = dict()
+
+    @staticmethod
+    def rebuild_object_data(obj, object_data_dict):
+        obj.updated = object_data_dict['updated']
+        
+    def package_object_data(self):
+        object_data_dict = self.rebuild_dict['object_data_dict']
+        object_data_dict['updated'] = self.updated
+        return self.rebuild_dict
 
     @classmethod
     def reload(cls, old_input_param_dict, old_tool_specific_data):
-        new_datatool = InputParamLogger.rebuild(old_input_param_dict)
+        new_datatool = Reloadable.rebuild(old_input_param_dict)
         cls.reload_tool_data(new_datatool=new_datatool, old_tool_specific_data=old_tool_specific_data)
         return new_datatool
 
@@ -54,7 +71,7 @@ class DataTool(InputParamLogger):
         pass
 
 
-class DataModel(InputParamLogger):
+class DataModel(Reloadable):
     def __init__(self, *, daily_path, run_name, num_points, run_doc_string, overwrite_mode, quiet):
         self.daily_path = daily_path
         self.run_name = run_name
@@ -74,31 +91,11 @@ class DataModel(InputParamLogger):
 
         self.data_dict = dict()
 
-
-
         self.data_dict[DataTool.DATASTREAM] = dict()
         self.data_dict[DataTool.SHOT_DATAFIELD] = dict()
         self.data_dict[DataTool.PROCESSOR] = dict()
         self.data_dict['datamodel'] = self.input_param_dict
         self.data_dict['shot_data'] = dict()
-
-    @property
-    def num_shots(self):
-        return self._num_shots
-
-    @num_shots.setter
-    def num_shots(self, value):
-        self._num_shots = value
-        self.data_dict['num_shots'] = value
-
-    @property
-    def last_processed_shot(self):
-        return self._last_processed_shot
-
-    @last_processed_shot.setter
-    def last_processed_shot(self, value):
-        self._last_processed_shot = value
-        self.data_dict['last_processed_shot'] = value
 
     def run(self):
         self.get_num_shots()
@@ -120,27 +117,27 @@ class DataModel(InputParamLogger):
             processor.process(shot_num=shot_num)
 
     def add_and_verify_datatool(self, datatool, target_container_dict, datatool_type):
-        datatool_name = datatool.datatool_name
-        new_input_param_dict = datatool.input_param_dict
-        datatool_exists = datatool_name in self.data_dict[datatool_type]
+        datatool_name = datatool.name
+        new_input_param_dict = datatool.rebuild_dict['input_param_dict']
+        datatool_exists = datatool_name in target_container_dict
         if not datatool_exists:
-            self.data_dict[datatool_type][datatool_name] = dict()
-            self.data_dict[datatool_type][datatool_name]['input_param_dict'] = new_input_param_dict
             target_container_dict[datatool_name] = datatool
+            datatool.updated = True
         elif datatool_exists:
             print(f'{datatool_type} "{datatool_name}" already exists in datamodel.')
-            old_input_param_dict = self.data_dict[datatool_type][datatool_name]['input_param_dict']
             old_datatool = target_container_dict[datatool_name]
+            old_input_param_dict = old_datatool.rebuild_dict['input_param_dict']
             if new_input_param_dict == old_input_param_dict:
-                print(f'Old and new {datatool_type} have the same paramaters')
+                print(f'Old and new {datatool_type} have the same input paramaters')
             else:
+                print(f'WARNING, old and new {datatool_type} differ.')
                 if self.overwrite_mode is OverwriteMode.KEEP_OLD:
-                    print(f'WARNING, old and new {datatool_type} differ. Using old {datatool_type} information. '
+                    print(f'Using OLD {datatool_type} information. '
                           f'Change overwrite mode to update {datatool_type} parameters.')
                     old_datatool.updated = False
                 elif self.overwrite_mode is OverwriteMode.KEEP_NEW:
-                    self.data_dict[datatool_type][datatool_name]['input_param_dict'] = new_input_param_dict
-                    self.data_dict[datatool_type][datatool_name]['tool_data_dict'] = dict()
+                    print(f'Using NEW {datatool_type} information. '
+                          f'Change overwrite mode to keep {datatool_type} parameters in the future.')
                     target_container_dict[datatool_name] = datatool
                     datatool.updated = True
 
@@ -179,8 +176,6 @@ class DataModel(InputParamLogger):
         datamodel_input_param_dict = old_data_dict['datamodel']
         new_datamodel = InputParamLogger.rebuild(datamodel_input_param_dict)
         new_datamodel.num_shots = old_data_dict['num_shots']
-        new_datamodel.
-
 
     def save_datamodel(self):
         self.data_dict['num_shots'] = self.num_shots
@@ -190,6 +185,22 @@ class DataModel(InputParamLogger):
         print(f'Saving data_dict to {datamodel_file_path}')
         pickle.dump(self.data_dict, open(datamodel_file_path, 'wb'))
 
+    def package_object_data(self):
+        object_data_dict = self.rebuild_dict['object_data_dict']
+        object_data_dict['num_shots'] = self.num_shots
+        object_data_dict['last_processed_shot'] = self.last_processed_shot
+
+        object_data_dict['datastream'] = dict()
+        for datastream in self.datastream_dict.values():
+            object_data_dict['datastream'][datastream.name] = datastream.package_object_data()
+
+        object_data_dict['shot_datafield'] = dict()
+        for shot_datafield in self.shot_datafield_dict.values():
+            object_data_dict['shot_datafield'][shot_datafield.name] = shot_datafield.package_object_data()
+
+        object_data_dict['processor'] = dict()
+        for processor in self.processor_dict.values():
+            object_data_dict['processor'][processor.name] = processor.package_object_data()
 
 
 
