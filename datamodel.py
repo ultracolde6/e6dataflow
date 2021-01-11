@@ -1,5 +1,11 @@
+from enum import Enum
 from pathlib import Path
 import h5py
+
+
+class OverwriteMode(Enum):
+    KEEP_OLD = 0
+    KEEP_NEW = 1
 
 
 class InputParamLogger:
@@ -19,11 +25,12 @@ class InputParamLogger:
 
 
 class DataModel:
-    def __init__(self, *, daily_path, run_name, run_doc_string, num_points, quiet):
+    def __init__(self, *, daily_path, run_name, num_points, run_doc_string, overwrite_mode, quiet):
         self.daily_path = daily_path
         self.run_name = run_name
         self.num_points = num_points
         self.run_doc_string = run_doc_string
+        self.overwrite_mode = overwrite_mode
         self.quiet = quiet
 
         self.datastream_dict = dict()
@@ -59,7 +66,6 @@ class DataModel:
         for processor in self.processor_dict.values():
             processor.process(shot_num=shot_num)
 
-
     def add_and_verify_datatool(self, datatool, target_container_dict, datatool_type):
         datatool_name = datatool.datatool_name
         new_input_param_dict = datatool.input_param_dict
@@ -67,14 +73,20 @@ class DataModel:
         if not datatool_exists:
             self.data_dict[datatool_type][datatool_name] = new_input_param_dict
             target_container_dict[datatool_name] = datatool
-        else:
+        elif datatool_exists:
             print(f'{datatool_type} "{datatool_name}" already exists in datamodel.')
             old_input_param_dict = self.data_dict[datatool_type][datatool_name]
             if new_input_param_dict == old_input_param_dict:
                 print(f'Old and new {datatool_type} have the same paramaters')
             else:
-                print(f'WARNING, old and new {datatool_type} differ. Using old {datatool_type} information.'
-                      f' Hard reset required to update {datatool_type} parameters.')
+                if self.overwrite_mode is OverwriteMode.KEEP_OLD:
+                    print(f'WARNING, old and new {datatool_type} differ. Using old {datatool_type} information. '
+                          f'Change overwrite mode to update {datatool_type} parameters.')
+                    target_container_dict[datatool_name].updated = False
+                elif self.overwrite_mode is OverwriteMode.KEEP_NEW:
+                    self.data_dict[datatool_type][datatool_name] = new_input_param_dict
+                    target_container_dict[datatool_name] = datatool
+                    datatool.updated = True
 
     def create_datastream(self, datastream_name, file_prefix, set_main_datastream=False):
         datastream = DataStream(datastream_name=datastream_name, daily_path=self.daily_path,
@@ -108,6 +120,7 @@ class DataModel:
 class DataTool(InputParamLogger):
     def __init__(self, *, datatool_name):
         self.datatool_name = datatool_name
+        self.updated = True
 
 
 class DataStream(DataTool):
