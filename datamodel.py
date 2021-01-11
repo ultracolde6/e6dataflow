@@ -3,21 +3,28 @@ from pathlib import Path
 import h5py
 import pickle
 
+
 class OverwriteMode(Enum):
     KEEP_OLD = 0
     KEEP_NEW = 1
 
 
-class Reloadable:
-    def __new__(cls, name, *args, **kwargs):
-        input_param_dict = {'name':name, 'args': args, 'kwargs': kwargs, 'class': cls}
+class Rebuildable:
+    # def __new__(cls, name, *args, **kwargs):
+    #     input_param_dict = {'name':name, 'args': args, 'kwargs': kwargs, 'class': cls}
+    #     object_data_dict = dict()
+    #     rebuild_dict = {'input_param_dict':input_param_dict,
+    #                     'object_data_dict':object_data_dict}
+    #     obj = super(Rebuildable, cls).__new__(cls)
+    #     obj.rebuild_dict = rebuild_dict
+    #     return obj
+
+    def __init__(self, name, *args, **kwargs):
+        self.name = name
+        input_param_dict = {'name':name, 'args': args, 'kwargs': kwargs, 'class': type(self)}
         object_data_dict = dict()
-        rebuild_dict = {'input_param_dict':input_param_dict,
-                        'object_data_dict':object_data_dict}
-        obj = super(Reloadable, cls).__new__(cls)
-        obj.name = name
-        obj.rebuild_dict = rebuild_dict
-        return obj
+        self.rebuild_dict = {'input_param_dict':input_param_dict,
+                             'object_data_dict':object_data_dict}
 
     @staticmethod
     def rebuild(rebuild_dict):
@@ -29,49 +36,36 @@ class Reloadable:
         new_obj = rebuild_class(rebuild_name, *rebuild_args, **rebuild_kwargs)
 
         object_data_dict = rebuild_dict['object_data_dict']
-        new_obj = rebuild_class.rebuild_object_data(new_obj, object_data_dict)
+        new_obj.rebuild_object_data(object_data_dict)
         return new_obj
 
-    @staticmethod
-    def rebuild_object_data(obj, object_data_dict):
-        return obj
+    def rebuild_object_data(self, object_data_dict):
+        pass
 
-    def package_object_data(self):
-        return self.rebuild_dict
+    def package_rebuild_dict(self):
+        pass
 
 
-class DataTool(Reloadable):
+class DataTool(Rebuildable):
     DATASTREAM = 'datastream'
     PROCESSOR = 'processor'
     SHOT_DATAFIELD = 'shot_datafield'
 
-    def __init__(self, *, name):
+    def __init__(self, *, datatool_name):
+        super(DataTool, self).__init__(name=datatool_name)
         self.updated = True
 
-    @staticmethod
-    def rebuild_object_data(obj, object_data_dict):
-        obj.updated = object_data_dict['updated']
-        
-    def package_object_data(self):
+    def rebuild_object_data(self, object_data_dict):
+        super(DataTool, self).rebuild_object_data(object_data_dict)
+        self.updated = object_data_dict['updated']
+
+    def package_rebuild_dict(self):
         object_data_dict = self.rebuild_dict['object_data_dict']
         object_data_dict['updated'] = self.updated
         return self.rebuild_dict
 
-    @classmethod
-    def reload(cls, old_input_param_dict, old_tool_specific_data):
-        new_datatool = Reloadable.rebuild(old_input_param_dict)
-        cls.reload_tool_data(new_datatool=new_datatool, old_tool_specific_data=old_tool_specific_data)
-        return new_datatool
 
-    @staticmethod
-    def reload_tool_data(new_datatool, old_tool_specific_data):
-        pass
-
-    def save_tool_data(self):
-        pass
-
-
-class DataModel(Reloadable):
+class DataModel(Rebuildable):
     def __init__(self, *, daily_path, run_name, num_points, run_doc_string, overwrite_mode, quiet):
         self.daily_path = daily_path
         self.run_name = run_name
