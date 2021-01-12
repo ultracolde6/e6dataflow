@@ -24,6 +24,7 @@ class Rebuildable:
         new_obj = rebuild_class(*rebuild_args, **rebuild_kwargs)
         object_data_dict = rebuild_dict['object_data_dict']
         new_obj.rebuild_object_data(object_data_dict)
+        new_obj.package_rebuild_dict()
         return new_obj
 
     def rebuild_object_data(self, object_data_dict):
@@ -137,7 +138,7 @@ class DataModel(Rebuildable):
         shot_datafield.set_data(shot_num, data)
 
     @staticmethod
-    def load_datamodel(daily_path, run_name):
+    def load_datamodel(daily_path, run_name, reset=False):
         datamodel_file_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
         print(f'Loading datamodel from {datamodel_file_path}')
         rebuild_dict = pickle.load(open(datamodel_file_path, 'rb'))

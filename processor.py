@@ -4,17 +4,16 @@ from utils import shot_to_loop_and_point
 
 
 class Processor(DataTool):
-    def __init__(self, *, name, reset):
+    def __init__(self, *, name):
         super(Processor, self).__init__(name=name)
-        self.reset = reset
 
     def process(self, shot_num):
         raise NotImplementedError
 
 
 class CountsProcessor(Processor):
-    def __init__(self, *, name, reset, frame_datafield_name, result_datafield_name, roi_slice):
-        super(CountsProcessor, self).__init__(name=name, reset=reset)
+    def __init__(self, *, name, frame_datafield_name, result_datafield_name, roi_slice):
+        super(CountsProcessor, self).__init__(name=name)
         self.frame_datafield_name = frame_datafield_name
         self.result_datafield_name = result_datafield_name
         self.roi_slice = roi_slice

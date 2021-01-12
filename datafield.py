@@ -50,8 +50,12 @@ class DataDictShotDataField(ShotDataField):
 
     def set_datamodel(self, datamodel):
         super(DataDictShotDataField, self).set_datamodel(datamodel)
-        self.datamodel.data_dict['shot_data'][self.name] = dict()
+        if self.name not in self.datamodel.data_dict['shot_data']:
+            self.datamodel.data_dict['shot_data'][self.name] = dict()
         self.datafield_dict = self.datamodel.data_dict['shot_data'][self.name]
+
+    def reset(self):
+        self.datafield_dict = dict()
 
     def get_data(self, shot_num):
         shot_key = f'shot_{shot_num:05d}'
