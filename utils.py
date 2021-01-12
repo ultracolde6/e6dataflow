@@ -22,3 +22,8 @@ def shot_to_loop_and_point(shot, num_points=1,
     loop = loop_ind + loop_index_convention
     point = point_ind + point_index_convention
     return loop, point
+
+
+def qprint(string, quiet):
+    if not quiet:
+        print(string)

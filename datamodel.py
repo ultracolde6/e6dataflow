@@ -2,9 +2,7 @@ from enum import Enum
 from pathlib import Path
 import h5py
 import pickle
-
-
-
+from utils import qprint
 
 
 class Rebuildable:
@@ -47,15 +45,6 @@ class DataTool(Rebuildable):
     def set_datamodel(self, datamodel):
         self.datamodel = datamodel
 
-    # def rebuild_object_data(self, object_data_dict):
-    #     super(DataTool, self).rebuild_object_data(object_data_dict)
-    #     self.updated = object_data_dict['updated']
-    #
-    # def package_rebuild_dict(self):
-    #     super(DataTool, self).package_rebuild_dict()
-    #     object_data_dict = self.rebuild_dict['object_data_dict']
-    #     object_data_dict['updated'] = self.updated
-
 
 class DataModel(Rebuildable):
     class OverwriteMode(Enum):
@@ -63,12 +52,11 @@ class DataModel(Rebuildable):
         KEEP_NEW = 1
 
     def __init__(self, *, daily_path, run_name, num_points, run_doc_string,
-                 overwrite_mode, quiet):
+                 quiet):
         self.daily_path = daily_path
         self.run_name = run_name
         self.num_points = num_points
         self.run_doc_string = run_doc_string
-        self.overwrite_mode = overwrite_mode
         self.quiet = quiet
 
         self.num_shots = 0
@@ -83,10 +71,10 @@ class DataModel(Rebuildable):
         self.data_dict = dict()
         self.data_dict['shot_data'] = dict()
 
-    def run(self):
+    def run(self, quiet=False):
         self.get_num_shots()
         for shot_num in range(self.last_processed_shot, self.num_shots):
-            print(f'** Processing shot_{shot_num:05d} **')
+            qprint(f'** Processing shot_{shot_num:05d} **', quiet=quiet)
             self.process_data(shot_num)
 
     def get_num_shots(self):
@@ -102,54 +90,42 @@ class DataModel(Rebuildable):
         for processor in self.processor_dict.values():
             processor.process(shot_num=shot_num)
 
-    def add_and_verify_datatool(self, datatool, target_container_dict, datatool_type, overwrite_mode=None):
-        if overwrite_mode is None:
-            overwrite_mode = self.overwrite_mode
+    def add_and_verify_datatool(self, datatool, target_container_dict, datatool_type, overwrite=False):
         datatool_name = datatool.name
         datatool_exists = datatool_name in target_container_dict
         if not datatool_exists:
             target_container_dict[datatool_name] = datatool
-            # datatool.updated = True
             datatool.set_datamodel(datamodel=self)
         elif datatool_exists:
-            print(f'{datatool_type} "{datatool_name}" already exists in datamodel.')
-            old_datatool = target_container_dict[datatool_name]
-            new_rebuild_dict = datatool.rebuild_dict
-            old_rebuild_dict = old_datatool.rebuild_dict
-            if new_rebuild_dict == old_rebuild_dict:
-                print(f'Old and new {datatool_type} have the same input and stored data')
-            else:
-                print(f'WARNING, old and new {datatool_type} have different input and/or stored data.')
-            if overwrite_mode is self.OverwriteMode.KEEP_NEW:
+            print(f'WARNING! {datatool_type} "{datatool_name}" already exists in datamodel.')
+            if overwrite:
                 print(f'Using NEW {datatool_type}. '
                       f'Change overwrite mode to keep {datatool_type} parameters in the future.')
                 target_container_dict[datatool_name] = datatool
-                # datatool.updated = True
                 datatool.set_datamodel(datamodel=self)
-            else:
+            elif not overwrite:
                 print(f'Using OLD {datatool_type}. '
                       f'Change overwrite mode to update {datatool_type} parameters.')
-                # old_datatool.updated = False
 
-    def create_datastream(self, name, file_prefix, set_main_datastream=False):
+    def create_datastream(self, name, file_prefix, set_main_datastream=False, overwrite=False):
         datastream = DataStream(name=name, daily_path=self.daily_path,
                                 run_name=self.run_name, file_prefix=file_prefix)
-        self.add_datastream(datastream, set_main_datastream=set_main_datastream)
+        self.add_datastream(datastream, set_main_datastream=set_main_datastream, overwrite=overwrite)
 
-    def add_datastream(self, datastream, set_main_datastream=False):
+    def add_datastream(self, datastream, set_main_datastream=False, overwrite=False):
         self.add_and_verify_datatool(datatool=datastream, target_container_dict=self.datastream_dict,
-                                     datatool_type=DataTool.DATASTREAM)
+                                     datatool_type=DataTool.DATASTREAM, overwrite=overwrite)
         if set_main_datastream or self.main_datastream is None:
             self.main_datastream = datastream
 
-    def add_shot_datafield(self, datafield):
+    def add_shot_datafield(self, datafield, overwrite=False):
         print(f'adding shot_datafield: {datafield.name}')
         self.add_and_verify_datatool(datatool=datafield, target_container_dict=self.shot_datafield_dict,
-                                     datatool_type=DataTool.SHOT_DATAFIELD)
+                                     datatool_type=DataTool.SHOT_DATAFIELD, overwrite=overwrite)
 
-    def add_processor(self, processor):
+    def add_processor(self, processor, overwrite=False):
         self.add_and_verify_datatool(datatool=processor, target_container_dict=self.processor_dict,
-                                     datatool_type=DataTool.PROCESSOR)
+                                     datatool_type=DataTool.PROCESSOR, overwrite=overwrite)
 
     def get_shot_data(self, shot_datafield_name, shot_num):
         shot_datafield = self.shot_datafield_dict[shot_datafield_name]
@@ -219,7 +195,6 @@ class DataModel(Rebuildable):
         for processor_rebuild_dict in object_data_dict['processor'].values():
             processor = Rebuildable.rebuild(processor_rebuild_dict)
             self.add_processor(processor)
-
 
 
 class DataStream(DataTool):

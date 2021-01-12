@@ -43,15 +43,14 @@ class DataStreamDataField(ShotDataField):
                           'not be manipulated')
 
 
-class ProcessedDataField(ShotDataField):
+class DataDictShotDataField(ShotDataField):
     def __init__(self, *, name):
-        super(ProcessedDataField, self).__init__(name=name)
+        super(DataDictShotDataField, self).__init__(name=name)
         self.datafield_dict = None
 
     def set_datamodel(self, datamodel):
-        super(ProcessedDataField, self).set_datamodel(datamodel)
-        if self.name not in self.datamodel.data_dict['shot_data']:
-            self.datamodel.data_dict['shot_data'][self.name] = dict()
+        super(DataDictShotDataField, self).set_datamodel(datamodel)
+        self.datamodel.data_dict['shot_data'][self.name] = dict()
         self.datafield_dict = self.datamodel.data_dict['shot_data'][self.name]
 
     def get_data(self, shot_num):

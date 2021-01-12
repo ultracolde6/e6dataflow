@@ -1,28 +1,23 @@
 import numpy as np
 from datamodel import DataTool
-from datafield import ProcessedDataField
 from utils import shot_to_loop_and_point
 
 
 class Processor(DataTool):
-    def __init__(self, *, name):
+    def __init__(self, *, name, reset):
         super(Processor, self).__init__(name=name)
+        self.reset = reset
 
     def process(self, shot_num):
         raise NotImplementedError
 
 
 class CountsProcessor(Processor):
-    def __init__(self, *, name, frame_datafield_name, result_datafield_name, roi_slice):
-        super(CountsProcessor, self).__init__(name=name)
+    def __init__(self, *, name, reset, frame_datafield_name, result_datafield_name, roi_slice):
+        super(CountsProcessor, self).__init__(name=name, reset=reset)
         self.frame_datafield_name = frame_datafield_name
         self.result_datafield_name = result_datafield_name
         self.roi_slice = roi_slice
-
-    def set_datamodel(self, datamodel):
-        super(CountsProcessor, self).set_datamodel(datamodel)
-        results_datafield = ProcessedDataField(name=self.result_datafield_name)
-        self.datamodel.add_shot_datafield(results_datafield)
 
     def process(self, shot_num):
         frame = self.datamodel.get_shot_data(self.frame_datafield_name, shot_num)
@@ -42,12 +37,6 @@ class MultiCountsProcessor(Processor):
         if roi_slice_array.shape is not (self.num_points, self.num_regions):
             raise ValueError(f'Shape of roi_slice_array much match number of points and number of output datafields.'
                              f' Shape must be ({self.num_points}, {self.num_regions})')
-
-    def set_datamodel(self, datamodel):
-        super(MultiCountsProcessor, self).set_datamodel(datamodel)
-        for result_datafield_name in self.result_datafield_name_list:
-            results_datafield = ProcessedDataField(name=result_datafield_name)
-            datamodel.add_shot_datafield(results_datafield)
 
     def process(self, shot_num):
         frame = self.datamodel.get_shot_data(self.frame_datafield_name, shot_num)
