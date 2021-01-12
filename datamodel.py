@@ -205,6 +205,27 @@ class DataModel(Rebuildable):
 
         object_data_dict['data_dict'] = self.data_dict
 
+    def rebuild_object_data(self, object_data_dict):
+        super(DataModel, self).rebuild_object_data(object_data_dict)
+        self.num_shots = object_data_dict['num_shots']
+        self.last_processed_shot = object_data_dict['last_processed_shot']
+        self.datamodel_file_path = object_data_dict['datamodel_file_path']
+
+        for datastream_rebuild_dict in object_data_dict['datastream'].values():
+            datastream = Rebuildable.rebuild(datastream_rebuild_dict)
+            is_main_datastream = datastream.name == object_data_dict['main_datastream']
+            self.add_datastream(datastream, set_main_datastream=is_main_datastream)
+
+        for shot_datafield_rebuild_dict in object_data_dict['shot_datafield'].values():
+            shot_datafield = Rebuildable.rebuild(shot_datafield_rebuild_dict)
+            self.add_shot_datafield(shot_datafield)
+
+        for processor_rebuild_dict in object_data_dict['processor'].values():
+            processor = Rebuildable.rebuild(processor_rebuild_dict)
+            self.add_processor(processor)
+
+        self.data_dict = object_data_dict['data_dict']
+
 
 class DataStream(DataTool):
     def __init__(self, *, datastream_name, daily_path, run_name, file_prefix):
