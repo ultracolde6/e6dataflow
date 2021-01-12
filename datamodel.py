@@ -10,21 +10,15 @@ class OverwriteMode(Enum):
 
 
 class Rebuildable:
-    # def __new__(cls, name, *args, **kwargs):
-    #     input_param_dict = {'name':name, 'args': args, 'kwargs': kwargs, 'class': cls}
-    #     object_data_dict = dict()
-    #     rebuild_dict = {'input_param_dict':input_param_dict,
-    #                     'object_data_dict':object_data_dict}
-    #     obj = super(Rebuildable, cls).__new__(cls)
-    #     obj.rebuild_dict = rebuild_dict
-    #     return obj
-
-    def __init__(self, name, *args, **kwargs):
-        self.name = name
-        input_param_dict = {'name':name, 'args': args, 'kwargs': kwargs, 'class': type(self)}
+    def __new__(cls, name, *args, **kwargs):
+        input_param_dict = {'name':name, 'args': args, 'kwargs': kwargs, 'class': cls}
         object_data_dict = dict()
-        self.rebuild_dict = {'input_param_dict':input_param_dict,
-                             'object_data_dict':object_data_dict}
+        rebuild_dict = {'input_param_dict':input_param_dict,
+                        'object_data_dict':object_data_dict}
+        obj = super(Rebuildable, cls).__new__(cls)
+        obj.name = name
+        obj.rebuild_dict = rebuild_dict
+        return obj
 
     @staticmethod
     def rebuild(rebuild_dict):
@@ -34,7 +28,6 @@ class Rebuildable:
         rebuild_args = input_param_dict['args']
         rebuild_kwargs = input_param_dict['kwargs']
         new_obj = rebuild_class(rebuild_name, *rebuild_args, **rebuild_kwargs)
-
         object_data_dict = rebuild_dict['object_data_dict']
         new_obj.rebuild_object_data(object_data_dict)
         return new_obj
@@ -54,19 +47,26 @@ class DataTool(Rebuildable):
     def __init__(self, *, datatool_name):
         super(DataTool, self).__init__(name=datatool_name)
         self.updated = True
+        self.datamodel = None
+
+    def set_datamodel(self, datamodel):
+        self.datamodel = datamodel
 
     def rebuild_object_data(self, object_data_dict):
         super(DataTool, self).rebuild_object_data(object_data_dict)
         self.updated = object_data_dict['updated']
 
     def package_rebuild_dict(self):
+        super(DataTool, self).package_rebuild_dict()
         object_data_dict = self.rebuild_dict['object_data_dict']
         object_data_dict['updated'] = self.updated
         return self.rebuild_dict
 
 
 class DataModel(Rebuildable):
-    def __init__(self, *, daily_path, run_name, num_points, run_doc_string, overwrite_mode, quiet):
+    def __init__(self, *, datamodel_name, daily_path, run_name, num_points, run_doc_string,
+                 overwrite_mode, quiet):
+        super(DataModel, self).__init__(name=datamodel_name)
         self.daily_path = daily_path
         self.run_name = run_name
         self.num_points = num_points
@@ -76,7 +76,7 @@ class DataModel(Rebuildable):
 
         self.num_shots = 0
         self.last_processed_shot = 0
-        self.datamodel_file_path = Path(daily_path, run_name, 'datamodel.p')
+        self.datamodel_file_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
 
         self.datastream_dict = dict()
         self.shot_datafield_dict = dict()
@@ -85,10 +85,10 @@ class DataModel(Rebuildable):
 
         self.data_dict = dict()
 
-        self.data_dict[DataTool.DATASTREAM] = dict()
-        self.data_dict[DataTool.SHOT_DATAFIELD] = dict()
-        self.data_dict[DataTool.PROCESSOR] = dict()
-        self.data_dict['datamodel'] = self.input_param_dict
+        # self.data_dict[DataTool.DATASTREAM] = dict()
+        # self.data_dict[DataTool.SHOT_DATAFIELD] = dict()
+        # self.data_dict[DataTool.PROCESSOR] = dict()
+        # self.data_dict['datamodel'] = self.input_param_dict
         self.data_dict['shot_data'] = dict()
 
     def run(self):
@@ -113,6 +113,7 @@ class DataModel(Rebuildable):
     def add_and_verify_datatool(self, datatool, target_container_dict, datatool_type):
         datatool_name = datatool.name
         new_input_param_dict = datatool.rebuild_dict['input_param_dict']
+
         datatool_exists = datatool_name in target_container_dict
         if not datatool_exists:
             target_container_dict[datatool_name] = datatool
@@ -195,9 +196,6 @@ class DataModel(Rebuildable):
         object_data_dict['processor'] = dict()
         for processor in self.processor_dict.values():
             object_data_dict['processor'][processor.name] = processor.package_object_data()
-
-
-
 
 
 class DataStream(DataTool):
