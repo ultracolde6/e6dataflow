@@ -164,38 +164,46 @@ class DataModel(Rebuildable):
         shot_datafield = self.shot_datafield_dict[shot_datafield_name]
         shot_datafield.set_data(shot_num, data)
 
-    @classmethod
-    def load_datamodel(cls, daily_path, run_name):
-        datamodel_file_path = Path(daily_path, run_name, 'datamodel.p')
-        old_data_dict = pickle.load(open(datamodel_file_path, 'rb'))
-        datamodel_input_param_dict = old_data_dict['datamodel']
-        new_datamodel = InputParamLogger.rebuild(datamodel_input_param_dict)
-        new_datamodel.num_shots = old_data_dict['num_shots']
+    # @classmethod
+    # def load_datamodel(cls, daily_path, run_name):
+    #     datamodel_file_path = Path(daily_path, run_name, 'datamodel.p')
+    #     old_data_dict = pickle.load(open(datamodel_file_path, 'rb'))
+    #     datamodel_input_param_dict = old_data_dict['datamodel']
+    #     new_datamodel = InputParamLogger.rebuild(datamodel_input_param_dict)
+    #     new_datamodel.num_shots = old_data_dict['num_shots']
 
-    def save_datamodel(self):
-        self.data_dict['num_shots'] = self.num_shots
-        self.data_dict['last_processed_shot'] = self.last_processed_shot
+    # def save_datamodel(self):
+    #     self.data_dict['num_shots'] = self.num_shots
+    #     self.data_dict['last_processed_shot'] = self.last_processed_shot
+    #
+    #     datamodel_file_path = Path(self.daily_path, self.run_name, 'datamodel.p')
+    #     print(f'Saving data_dict to {datamodel_file_path}')
+    #     pickle.dump(self.data_dict, open(datamodel_file_path, 'wb'))
 
-        datamodel_file_path = Path(self.daily_path, self.run_name, 'datamodel.p')
-        print(f'Saving data_dict to {datamodel_file_path}')
-        pickle.dump(self.data_dict, open(datamodel_file_path, 'wb'))
-
-    def package_object_data(self):
+    def package_rebuild_dict(self):
+        super(DataModel, self).package_rebuild_dict()
         object_data_dict = self.rebuild_dict['object_data_dict']
         object_data_dict['num_shots'] = self.num_shots
         object_data_dict['last_processed_shot'] = self.last_processed_shot
+        object_data_dict['datamodel_file_path'] = self.datamodel_file_path
 
         object_data_dict['datastream'] = dict()
         for datastream in self.datastream_dict.values():
-            object_data_dict['datastream'][datastream.name] = datastream.package_object_data()
+            datastream.package_rebuild_dict()
+            object_data_dict['datastream'][datastream.name] = datastream.rebuild_dict
+        object_data_dict['main_datastream'] = self.main_datastream.name
 
         object_data_dict['shot_datafield'] = dict()
         for shot_datafield in self.shot_datafield_dict.values():
-            object_data_dict['shot_datafield'][shot_datafield.name] = shot_datafield.package_object_data()
+            shot_datafield.package_rebuild_dict()
+            object_data_dict['shot_datafield'][shot_datafield.name] = shot_datafield.rebuild_dict
 
         object_data_dict['processor'] = dict()
         for processor in self.processor_dict.values():
-            object_data_dict['processor'][processor.name] = processor.package_object_data()
+            processor.package_rebuild_dict()
+            object_data_dict['processor'][processor.name] = processor.rebuild_dict
+
+        object_data_dict['data_dict'] = self.data_dict
 
 
 class DataStream(DataTool):
