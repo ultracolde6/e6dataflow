@@ -4,10 +4,8 @@ from utils import shot_to_loop_and_point
 
 
 class Verifier(DataTool):
-    def __init__(self, *, verifier_name, datamodel):
-        super(Verifier, self).__init__(datatool_name=verifier_name)
-        self.verifier_name = verifier_name
-        self.datamodel = datamodel
+    def __init__(self, *, name):
+        super(Verifier, self).__init__(name=name)
         self.verifier_list = np.array([])
 
     def condition_list(self, shot_num):
@@ -27,8 +25,8 @@ class Verifier(DataTool):
 
 
 class ThresholdVerifier(Verifier):
-    def __init__(self, *, verifier_name, datamodel, threshold_value):
-        super(ThresholdVerifier, self).__init__(verifier_name=verifier_name, datamodel=datamodel)
+    def __init__(self, *, name, threshold_value):
+        super(ThresholdVerifier, self).__init__(name=name)
         self.threshold_value = threshold_value
 
     def _verify(self, shot_num, shot_datafield_name):

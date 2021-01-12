@@ -2,15 +2,13 @@ from datamodel import DataTool
 
 
 class DataField(DataTool):
-    def __init__(self, *, datafield_name, datamodel):
-        super(DataField, self).__init__(datatool_name=datafield_name)
-        self.datafield_name = datafield_name
-        self.datamodel = datamodel
+    def __init__(self, *, name):
+        super(DataField, self).__init__(name=name)
 
 
 class ShotDataField(DataField):
-    def __init__(self, *, datafield_name, datamodel):
-        super(ShotDataField, self).__init__(datafield_name=datafield_name, datamodel=datamodel)
+    def __init__(self, *, name):
+        super(ShotDataField, self).__init__(name=name)
 
     def get_data(self, shot_num):
         raise NotImplementedError
@@ -20,12 +18,16 @@ class ShotDataField(DataField):
 
 
 class DataStreamDataField(ShotDataField):
-    def __init__(self, *, datafield_name, datamodel, datastream_name, h5_subpath, h5_dataset_name):
-        super(DataStreamDataField, self).__init__(datafield_name=datafield_name, datamodel=datamodel)
+    def __init__(self, *, name, datastream_name, h5_subpath, h5_dataset_name):
+        super(DataStreamDataField, self).__init__(name=name)
         self.datastream_name = datastream_name
         self.h5_subpath = h5_subpath
         self.h5_dataset_name = h5_dataset_name
-        self.datastream = datamodel.datastream_dict[datastream_name]
+        self.datastream = None
+
+    def set_datamodel(self, datamodel):
+        super(DataStreamDataField, self).set_datamodel(datamodel)
+        self.datastream = datamodel.datastream_dict[self.datastream_name]
 
     def get_data(self, shot_num):
         h5_file = self.datastream.load_shot(shot_num)
@@ -42,10 +44,15 @@ class DataStreamDataField(ShotDataField):
 
 
 class ProcessedDataField(ShotDataField):
-    def __init__(self, *, datafield_name, datamodel):
-        super(ProcessedDataField, self).__init__(datafield_name=datafield_name, datamodel=datamodel)
-        self.datamodel.data_dict['shot_data'][self.datafield_name] = dict()
-        self.datafield_dict = self.datamodel.data_dict['shot_data'][self.datafield_name]
+    def __init__(self, *, name):
+        super(ProcessedDataField, self).__init__(name=name)
+        self.datafield_dict = None
+
+    def set_datamodel(self, datamodel):
+        super(ProcessedDataField, self).set_datamodel(datamodel)
+        if self.name not in self.datamodel.data_dict['shot_data']:
+            self.datamodel.data_dict['shot_data'][self.name] = dict()
+        self.datafield_dict = self.datamodel.data_dict['shot_data'][self.name]
 
     def get_data(self, shot_num):
         shot_key = f'shot_{shot_num:05d}'

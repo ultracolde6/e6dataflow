@@ -2,14 +2,11 @@ from datamodel import DataTool
 
 
 class Aggregator(DataTool):
-    def __init__(self, *, aggregator_name, datamodel, verifier_list):
-        super(Aggregator, self).__init__(datatool_name=aggregator_name)
-        self.aggregator_name = aggregator_name
-        self.datamodel = datamodel
+    def __init__(self, *, name, verifier_list):
+        super(Aggregator, self).__init__(name=name)
         self.verifier_list = verifier_list
         self.aggregated_shot_list = []
         self.num_aggregated_shots = 0
-
 
     def aggregate(self, shot_num):
         verified = True
@@ -24,6 +21,7 @@ class Aggregator(DataTool):
     def _aggregate(self, shot_num):
         pass
 
+
 class AverageStdAggregator(Aggregator):
-    def __init__(self, *, aggregator_name, datamodel):
-        super(AverageStdAggregator, self).__init__(aggregator_name=aggregator_name, datamodel=datamodel)
+    def __init__(self, *, name, verifier_list):
+        super(AverageStdAggregator, self).__init__(name=name, verifier_list=verifier_list)
