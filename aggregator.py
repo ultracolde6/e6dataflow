@@ -10,6 +10,7 @@ class Aggregator(DataTool):
         self.aggregated_shot_list = []
         self.num_aggregated_shots = 0
 
+
     def aggregate(self, shot_num):
         verified = True
         for verifier in self.verifier_list:

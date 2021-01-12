@@ -111,9 +111,8 @@ class DataModel(Rebuildable):
             processor.process(shot_num=shot_num)
 
     def add_and_verify_datatool(self, datatool, target_container_dict, datatool_type):
+        datatool.set_datamodel(datamodel=self)
         datatool_name = datatool.name
-        new_input_param_dict = datatool.rebuild_dict['input_param_dict']
-
         datatool_exists = datatool_name in target_container_dict
         if not datatool_exists:
             target_container_dict[datatool_name] = datatool
@@ -121,17 +120,18 @@ class DataModel(Rebuildable):
         elif datatool_exists:
             print(f'{datatool_type} "{datatool_name}" already exists in datamodel.')
             old_datatool = target_container_dict[datatool_name]
-            old_input_param_dict = old_datatool.rebuild_dict['input_param_dict']
-            if new_input_param_dict == old_input_param_dict:
-                print(f'Old and new {datatool_type} have the same input paramaters')
+            new_rebuild_dict = datatool.rebuild_dict
+            old_rebuild_dict = old_datatool.rebuild_dict
+            if new_rebuild_dict == old_rebuild_dict:
+                print(f'Old and new {datatool_type} have the same input and stored data')
             else:
-                print(f'WARNING, old and new {datatool_type} differ.')
+                print(f'WARNING, old and new {datatool_type} have different input and/or stored data.')
                 if self.overwrite_mode is OverwriteMode.KEEP_OLD:
-                    print(f'Using OLD {datatool_type} information. '
+                    print(f'Using OLD {datatool_type}. '
                           f'Change overwrite mode to update {datatool_type} parameters.')
                     old_datatool.updated = False
                 elif self.overwrite_mode is OverwriteMode.KEEP_NEW:
-                    print(f'Using NEW {datatool_type} information. '
+                    print(f'Using NEW {datatool_type}. '
                           f'Change overwrite mode to keep {datatool_type} parameters in the future.')
                     target_container_dict[datatool_name] = datatool
                     datatool.updated = True
@@ -139,7 +139,7 @@ class DataModel(Rebuildable):
     def create_datastream(self, datastream_name, file_prefix, set_main_datastream=False):
         datastream = DataStream(datastream_name=datastream_name, daily_path=self.daily_path,
                                 run_name=self.run_name, file_prefix=file_prefix)
-        self.add_datastream(datastream)
+        self.add_datastream(datastream, set_main_datastream=set_main_datastream)
 
     def add_datastream(self, datastream, set_main_datastream=False):
         self.add_and_verify_datatool(datatool=datastream, target_container_dict=self.datastream_dict,
