@@ -85,12 +85,6 @@ class DataModel(Rebuildable):
 
         self.data_dict = dict()
 
-        # self.data_dict[DataTool.DATASTREAM] = dict()
-        # self.data_dict[DataTool.SHOT_DATAFIELD] = dict()
-        # self.data_dict[DataTool.PROCESSOR] = dict()
-        # self.data_dict['datamodel'] = self.input_param_dict
-        self.data_dict['shot_data'] = dict()
-
     def run(self):
         self.get_num_shots()
         for shot_num in range(self.last_processed_shot, self.num_shots):
@@ -164,21 +158,17 @@ class DataModel(Rebuildable):
         shot_datafield = self.shot_datafield_dict[shot_datafield_name]
         shot_datafield.set_data(shot_num, data)
 
-    # @classmethod
-    # def load_datamodel(cls, daily_path, run_name):
-    #     datamodel_file_path = Path(daily_path, run_name, 'datamodel.p')
-    #     old_data_dict = pickle.load(open(datamodel_file_path, 'rb'))
-    #     datamodel_input_param_dict = old_data_dict['datamodel']
-    #     new_datamodel = InputParamLogger.rebuild(datamodel_input_param_dict)
-    #     new_datamodel.num_shots = old_data_dict['num_shots']
+    @staticmethod
+    def load_datamodel(daily_path, run_name):
+        datamodel_file_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
+        rebuild_dict = pickle.load(open(datamodel_file_path, 'rb'))
+        datamodel = Rebuildable.rebuild(rebuild_dict)
+        return datamodel
 
-    # def save_datamodel(self):
-    #     self.data_dict['num_shots'] = self.num_shots
-    #     self.data_dict['last_processed_shot'] = self.last_processed_shot
-    #
-    #     datamodel_file_path = Path(self.daily_path, self.run_name, 'datamodel.p')
-    #     print(f'Saving data_dict to {datamodel_file_path}')
-    #     pickle.dump(self.data_dict, open(datamodel_file_path, 'wb'))
+    def save_datamodel(self):
+        self.package_rebuild_dict()
+        print(f'Saving datamodel with name "{self.name}" to {self.datamodel_file_path}')
+        pickle.dump(self.rebuild_dict, open(self.datamodel_file_path, 'wb'))
 
     def package_rebuild_dict(self):
         super(DataModel, self).package_rebuild_dict()
