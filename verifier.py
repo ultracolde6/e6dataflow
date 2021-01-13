@@ -5,7 +5,7 @@ from utils import shot_to_loop_and_point
 
 class Verifier(DataTool):
     def __init__(self, *, name):
-        super(Verifier, self).__init__(name=name)
+        super(Verifier, self).__init__(name=name, datatool_type=DataTool.VERIFIER)
         self.verifier_list = np.array([])
 
     def condition_list(self, shot_num):

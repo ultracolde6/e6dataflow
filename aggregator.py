@@ -3,7 +3,7 @@ from datamodel import DataTool
 
 class Aggregator(DataTool):
     def __init__(self, *, name, verifier_list):
-        super(Aggregator, self).__init__(name=name)
+        super(Aggregator, self).__init__(name=name, datatool_type=DataTool.AGGREGATOR)
         self.verifier_list = verifier_list
         self.aggregated_shot_list = []
         self.num_aggregated_shots = 0

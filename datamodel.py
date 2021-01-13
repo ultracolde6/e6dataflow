@@ -40,11 +40,14 @@ class DataTool(Rebuildable):
     DATASTREAM = 'datastream'
     PROCESSOR = 'processor'
     SHOT_DATAFIELD = 'shot_datafield'
+    AGGREGATOR = 'aggregator'
+    VERIFIER = 'verifier'
 
     def __init__(self, *, name, datatool_type):
         self.name = name
         self.datatool_type = datatool_type
         self.datamodel = None
+        self.reset = False
         self.child_list = []
         self.parent_list = []
 

@@ -3,13 +3,8 @@ from datamodel import DataTool
 
 class DataField(DataTool):
     def __init__(self, *, name):
-        super(DataField, self).__init__(name=name)
-        self.children_datatools = []
+        super(DataField, self).__init__(name=name, datatool_type=DataTool.SHOT_DATAFIELD)
 
-    def get_children_datatools(self, children_list):
-        for datatool_name in self.children_datatools:
-            datatool = self.datamodel.shot_datafield_dict[datafield_name]
-            children_list += datafield.get_children_datatools
 
 class ShotDataField(DataField):
     def __init__(self, *, name):

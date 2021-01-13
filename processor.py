@@ -5,17 +5,8 @@ from utils import shot_to_loop_and_point
 
 class Processor(DataTool):
     def __init__(self, *, name):
-        super(Processor, self).__init__(name=name)
+        super(Processor, self).__init__(name=name, datatool_type=DataTool.PROCESSOR)
         self.processed_shots = []
-        self.reset = False
-        self.children_datafield_list = []
-        self.parent_datafield_list = []
-
-    def get_children_datatools(self, children_list):
-        for datafield_name in self.children_datafield_list:
-            datafield = self.datamodel.shot_datafield_dict[datafield_name]
-            children_list += datafield.get_children_datatools
-
 
     def process(self, shot_num):
         if shot_num not in self.processed_shots or self.reset:
@@ -41,9 +32,6 @@ class CountsProcessor(Processor):
         self.frame_datafield_name = frame_datafield_name
         self.result_datafield_name = result_datafield_name
         self.roi_slice = roi_slice
-
-        self.children_datafield_list.append(self.result_datafield_name)
-        self.parent_datafield_list.append(self.frame_datafield_name)
 
     def _process(self, shot_num):
         frame = self.datamodel.get_shot_data(self.frame_datafield_name, shot_num)
