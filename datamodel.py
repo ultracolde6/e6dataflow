@@ -113,6 +113,8 @@ class DataModel(Rebuildable):
         for shot_num in range(self.last_processed_shot, self.num_shots):
             qprint(f'** Processing shot_{shot_num:05d} **', quiet=quiet)
             self.process_data(shot_num)
+        for datatool in self.datatool_dict.values():
+            datatool.reset=False
 
     def get_num_shots(self):
         self.num_shots = self.main_datastream.count_shots()
@@ -127,7 +129,7 @@ class DataModel(Rebuildable):
         for processor in self.get_processors():
             processor.process(shot_num=shot_num)
 
-    def add_datatool(self, datatool, overwrite=False):
+    def set_datatool(self, datatool, overwrite=False):
         datatool_name = datatool.name
         datatool_type = datatool.datatool_type
         datatool_exists = datatool_name in self.datatool_dict
@@ -136,37 +138,42 @@ class DataModel(Rebuildable):
             datatool.set_datamodel(datamodel=self)
         elif datatool_exists:
             print(f'WARNING! {datatool_type} "{datatool_name}" already exists in datamodel.')
-            if overwrite:
-                print(f'Using NEW {datatool_type}.')
-                self.datatool_dict[datatool_name] = datatool
-                datatool.set_datamodel(datamodel=self)
-                print(f'Re-running the datamodel may result in overwriting datamodel data. ')
-                print(f'The following datamodels are configured into reset mode:')
-                datatool.reset = True
-                print(f'{datatool.datatool_type}: {datatool.name}')
-                for child_datatool_name in datatool.get_descendents():
-                    child_datatool = self.datatool_dict[child_datatool_name]
-                    child_datatool.reset = True
-                    print(f'{child_datatool.datatool_type}: {child_datatool.name}')
-            elif not overwrite:
-                print(f'Using OLD {datatool_type}.')
+            old_datatool = self.datatool_dict[datatool_name]
+            if datatool.input_param_dict == old_datatool.input_param_dict:
+                print(f'OLD and NEW {datatool_type} have the same input parameters, using OLD {datatool_type}.')
+            else:
+                print(f'OLD and NEW {datatool_type} differ. overwrite set to {overwrite}')
+                if overwrite:
+                    print(f'Using NEW {datatool_type}.')
+                    self.datatool_dict[datatool_name] = datatool
+                    datatool.set_datamodel(datamodel=self)
+                    print(f'Re-running the datamodel may result in overwriting datamodel data. ')
+                    print(f'The following datamodels are configured into reset mode:')
+                    datatool.reset = True
+                    print(f'{datatool.datatool_type}: {datatool.name}')
+                    for child_datatool_name in datatool.get_descendents():
+                        child_datatool = self.datatool_dict[child_datatool_name]
+                        child_datatool.reset = True
+                        print(f'{child_datatool.datatool_type}: {child_datatool.name}')
+                elif not overwrite:
+                    print(f'Using OLD {datatool_type}.')
 
     def create_datastream(self, name, file_prefix, set_main_datastream=False, overwrite=False):
         datastream = DataStream(name=name, daily_path=self.daily_path,
                                 run_name=self.run_name, file_prefix=file_prefix)
-        self.add_datastream(datastream, set_main_datastream=set_main_datastream, overwrite=overwrite)
+        self.set_datastream(datastream, set_main_datastream=set_main_datastream, overwrite=overwrite)
 
-    def add_datastream(self, datastream, set_main_datastream=False, overwrite=False):
-        self.add_datatool(datatool=datastream, overwrite=overwrite)
+    def set_datastream(self, datastream, set_main_datastream=False, overwrite=False):
+        self.set_datatool(datatool=datastream, overwrite=overwrite)
         if set_main_datastream or self.main_datastream is None:
             self.main_datastream = datastream
 
-    def add_shot_datafield(self, datafield, overwrite=False):
+    def set_shot_datafield(self, datafield, overwrite=False):
         print(f'adding shot_datafield: {datafield.name}')
-        self.add_datatool(datatool=datafield, overwrite=overwrite)
+        self.set_datatool(datatool=datafield, overwrite=overwrite)
 
-    def add_processor(self, processor, overwrite=False):
-        self.add_datatool(datatool=processor, overwrite=overwrite)
+    def set_processor(self, processor, overwrite=False):
+        self.set_datatool(datatool=processor, overwrite=overwrite)
 
     def get_shot_data(self, shot_datafield_name, shot_num):
         shot_datafield = self.datatool_dict[shot_datafield_name]
@@ -215,7 +222,7 @@ class DataModel(Rebuildable):
 
         for datatool_rebuild_dict in object_data_dict['datatools'].values():
             datatool = Rebuildable.rebuild(rebuild_dict=datatool_rebuild_dict)
-            self.add_datatool(datatool, overwrite=False)
+            self.set_datatool(datatool, overwrite=False)
 
         self.main_datastream = self.datatool_dict[object_data_dict['main_datastream']]
 
