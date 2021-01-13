@@ -4,11 +4,23 @@ from utils import shot_to_loop_and_point
 
 
 class Processor(DataTool):
-    def __init__(self, *, name):
+    def __init__(self, *, name, overwrite):
         super(Processor, self).__init__(name=name)
+        self.processed_shots = []
+        self.overwrite = overwrite
 
     def process(self, shot_num):
-        raise NotImplementedError
+        if shot_num not in self.processed_shots or overwrite:
+            self._process(shot_num)
+        else:
+            print()
+
+    def package_rebuild_dict(self):
+        super(Processor, self).package_rebuild_dict()
+        self.object_data_dict['processed_shots'] = self.processed_shots
+
+    def rebuild_object_data(self, object_data_dict):
+        self.processed_shots = object_data_dict['processed_shots']
 
 
 class CountsProcessor(Processor):

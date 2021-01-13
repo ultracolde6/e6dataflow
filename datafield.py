@@ -10,6 +10,9 @@ class ShotDataField(DataField):
     def __init__(self, *, name):
         super(ShotDataField, self).__init__(name=name)
 
+    def contains_shot(self, shot_num):
+        raise NotImplementedError
+
     def get_data(self, shot_num):
         raise NotImplementedError
 
@@ -28,6 +31,9 @@ class DataStreamDataField(ShotDataField):
     def set_datamodel(self, datamodel):
         super(DataStreamDataField, self).set_datamodel(datamodel)
         self.datastream = datamodel.datastream_dict[self.datastream_name]
+
+    def contains_shot(self, shot_num):
+        return self.datastream.contains_shot(shot_num)
 
     def get_data(self, shot_num):
         h5_file = self.datastream.load_shot(shot_num)
@@ -56,6 +62,13 @@ class DataDictShotDataField(ShotDataField):
 
     def reset(self):
         self.datafield_dict = dict()
+
+    def contains_shot(self, shot_num):
+        shot_key = f'shot_{shot_num:05d}'
+        if shot_key in self.datafield_dict:
+            return True
+        else:
+            return False
 
     def get_data(self, shot_num):
         shot_key = f'shot_{shot_num:05d}'

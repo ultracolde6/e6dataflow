@@ -13,6 +13,8 @@ class Rebuildable:
                         'object_data_dict': object_data_dict}
         obj = super(Rebuildable, cls).__new__(cls)
         obj.rebuild_dict = rebuild_dict
+        obj.input_param_dict = input_param_dict
+        obj.object_data_dict = object_data_dict
         return obj
 
     @staticmethod
@@ -153,28 +155,27 @@ class DataModel(Rebuildable):
 
     def package_rebuild_dict(self):
         super(DataModel, self).package_rebuild_dict()
-        object_data_dict = self.rebuild_dict['object_data_dict']
-        object_data_dict['num_shots'] = self.num_shots
-        object_data_dict['last_processed_shot'] = self.last_processed_shot
-        object_data_dict['datamodel_file_path'] = self.datamodel_file_path
+        self.object_data_dict['num_shots'] = self.num_shots
+        self.object_data_dict['last_processed_shot'] = self.last_processed_shot
+        self.object_data_dict['datamodel_file_path'] = self.datamodel_file_path
 
-        object_data_dict['datastream'] = dict()
+        self.object_data_dict['datastream'] = dict()
         for datastream in self.datastream_dict.values():
             datastream.package_rebuild_dict()
-            object_data_dict['datastream'][datastream.name] = datastream.rebuild_dict
-        object_data_dict['main_datastream'] = self.main_datastream.name
+            self.object_data_dict['datastream'][datastream.name] = datastream.rebuild_dict
+        self.object_data_dict['main_datastream'] = self.main_datastream.name
 
-        object_data_dict['shot_datafield'] = dict()
+        self.object_data_dict['shot_datafield'] = dict()
         for shot_datafield in self.shot_datafield_dict.values():
             shot_datafield.package_rebuild_dict()
-            object_data_dict['shot_datafield'][shot_datafield.name] = shot_datafield.rebuild_dict
+            self.object_data_dict['shot_datafield'][shot_datafield.name] = shot_datafield.rebuild_dict
 
-        object_data_dict['processor'] = dict()
+        self.object_data_dict['processor'] = dict()
         for processor in self.processor_dict.values():
             processor.package_rebuild_dict()
-            object_data_dict['processor'][processor.name] = processor.rebuild_dict
+            self.object_data_dict['processor'][processor.name] = processor.rebuild_dict
 
-        object_data_dict['data_dict'] = self.data_dict
+        self.object_data_dict['data_dict'] = self.data_dict
 
     def rebuild_object_data(self, object_data_dict):
         super(DataModel, self).rebuild_object_data(object_data_dict)
@@ -205,6 +206,11 @@ class DataStream(DataTool):
         self.run_name = run_name
         self.file_prefix = file_prefix
         self.data_path = Path(self.daily_path, 'data', run_name, self.name)
+
+    def contains_shot(self, shot_num):
+        file_name = f'{self.file_prefix}_{shot_num:05d}.h5'
+        file_path = Path(self.data_path, file_name)
+        return file_path.exists()
 
     def load_shot(self, shot_num):
         file_name = f'{self.file_prefix}_{shot_num:05d}.h5'
