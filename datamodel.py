@@ -63,10 +63,12 @@ class DataTool(Rebuildable):
             self.parent_list.append(parent_datatool_name)
 
     def get_descendents(self):
-        descendents = []
-        for decendent in self.child_list:
-            descendents = descendents + decendent.get_descendents()
-        return descendents
+        descendent_list = []
+        for descendent_name in self.child_list:
+            descendent_list.append(descendent_name)
+            descendent = self.datamodel.datatool_dict[descendent_name]
+            descendent_list += descendent.get_descendents()
+        return descendent_list
 
 
 class DataModel(Rebuildable):
@@ -135,13 +137,19 @@ class DataModel(Rebuildable):
         elif datatool_exists:
             print(f'WARNING! {datatool_type} "{datatool_name}" already exists in datamodel.')
             if overwrite:
-                print(f'Using NEW {datatool_type}. '
-                      f'Change overwrite mode to keep {datatool_type} parameters in the future.')
+                print(f'Using NEW {datatool_type}.')
                 self.datatool_dict[datatool_name] = datatool
                 datatool.set_datamodel(datamodel=self)
+                print(f'Re-running the datamodel may result in overwriting datamodel data. ')
+                print(f'The following datamodels are configured into reset mode:')
+                datatool.reset = True
+                print(f'{datatool.datatool_type}: {datatool.name}')
+                for child_datatool_name in datatool.get_descendents():
+                    child_datatool = self.datatool_dict[child_datatool_name]
+                    child_datatool.reset = True
+                    print(f'{child_datatool.datatool_type}: {child_datatool.name}')
             elif not overwrite:
-                print(f'Using OLD {datatool_type}. '
-                      f'Change overwrite mode to update {datatool_type} parameters.')
+                print(f'Using OLD {datatool_type}.')
 
     def create_datastream(self, name, file_prefix, set_main_datastream=False, overwrite=False):
         datastream = DataStream(name=name, daily_path=self.daily_path,
