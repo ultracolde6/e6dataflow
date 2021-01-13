@@ -55,10 +55,18 @@ class DataTool(Rebuildable):
         self.datamodel = datamodel
 
     def set_child(self, child_datatool_name):
-        pass
+        if child_datatool_name not in self.child_list:
+            self.child_list.append(child_datatool_name)
 
-    def set_children_and_parents(self):
-        pass
+    def set_parent(self, parent_datatool_name):
+        if parent_datatool_name not in self.parent_list:
+            self.parent_list.append(parent_datatool_name)
+
+    def get_descendents(self):
+        descendents = []
+        for decendent in self.child_list:
+            descendents = descendents + decendent.get_descendents()
+        return descendents
 
 
 class DataModel(Rebuildable):
