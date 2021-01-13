@@ -87,9 +87,6 @@ class DataModel(Rebuildable):
         self.datamodel_file_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
 
         self.datatool_dict = dict()
-        # self.datastream_dict = dict()
-        # self.shot_datafield_dict = dict()
-        # self.processor_dict = dict()
         self.main_datastream = None
 
         self.data_dict = dict()
@@ -130,7 +127,7 @@ class DataModel(Rebuildable):
 
     def add_datatool(self, datatool, overwrite=False):
         datatool_name = datatool.name
-        datatool_type = datatool.dataatool_type
+        datatool_type = datatool.datatool_type
         datatool_exists = datatool_name in self.datatool_dict
         if not datatool_exists:
             self.datatool_dict[datatool_name] = datatool
@@ -173,7 +170,7 @@ class DataModel(Rebuildable):
         shot_datafield.set_data(shot_num, data)
 
     @staticmethod
-    def load_datamodel(daily_path, run_name, reset=False):
+    def load_datamodel(daily_path, run_name):
         datamodel_file_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
         print(f'Loading datamodel from {datamodel_file_path}')
         rebuild_dict = pickle.load(open(datamodel_file_path, 'rb'))
@@ -200,22 +197,6 @@ class DataModel(Rebuildable):
 
         self.object_data_dict['data_dict'] = self.data_dict
 
-        # self.object_data_dict['datastream'] = dict()
-        # for datastream in self.datastream_dict.values():
-        #     datastream.package_rebuild_dict()
-        #     self.object_data_dict['datastream'][datastream.name] = datastream.rebuild_dict
-        # self.object_data_dict['main_datastream'] = self.main_datastream.name
-        #
-        # self.object_data_dict['shot_datafield'] = dict()
-        # for shot_datafield in self.shot_datafield_dict.values():
-        #     shot_datafield.package_rebuild_dict()
-        #     self.object_data_dict['shot_datafield'][shot_datafield.name] = shot_datafield.rebuild_dict
-        #
-        # self.object_data_dict['processor'] = dict()
-        # for processor in self.processor_dict.values():
-        #     processor.package_rebuild_dict()
-        #     self.object_data_dict['processor'][processor.name] = processor.rebuild_dict
-
     def rebuild_object_data(self, object_data_dict):
         super(DataModel, self).rebuild_object_data(object_data_dict)
         self.num_shots = object_data_dict['num_shots']
@@ -224,18 +205,11 @@ class DataModel(Rebuildable):
 
         self.data_dict = object_data_dict['data_dict']
 
-        for datastream_rebuild_dict in object_data_dict['datastream'].values():
-            datastream = Rebuildable.rebuild(datastream_rebuild_dict)
-            is_main_datastream = datastream.name == object_data_dict['main_datastream']
-            self.add_datastream(datastream, set_main_datastream=is_main_datastream)
+        for datatool_rebuild_dict in object_data_dict['datatools'].values():
+            datatool = Rebuildable.rebuild(rebuild_dict=datatool_rebuild_dict)
+            self.add_datatool(datatool, overwrite=False)
 
-        for shot_datafield_rebuild_dict in object_data_dict['shot_datafield'].values():
-            shot_datafield = Rebuildable.rebuild(shot_datafield_rebuild_dict)
-            self.add_shot_datafield(shot_datafield)
-
-        for processor_rebuild_dict in object_data_dict['processor'].values():
-            processor = Rebuildable.rebuild(processor_rebuild_dict)
-            self.add_processor(processor)
+        self.main_datastream = self.datatool_dict[object_data_dict['main_datastream']]
 
 
 class DataStream(DataTool):

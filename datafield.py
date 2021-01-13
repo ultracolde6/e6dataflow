@@ -30,7 +30,7 @@ class DataStreamDataField(ShotDataField):
 
     def set_datamodel(self, datamodel):
         super(DataStreamDataField, self).set_datamodel(datamodel)
-        self.datastream = datamodel.datastream_dict[self.datastream_name]
+        self.datastream = datamodel.datatool_dict[self.datastream_name]
 
     def contains_shot(self, shot_num):
         return self.datastream.contains_shot(shot_num)
