@@ -54,11 +54,11 @@ class DataTool(Rebuildable):
     def set_datamodel(self, datamodel):
         self.datamodel = datamodel
 
-    def set_child(self, child_datatool_name):
+    def add_child(self, child_datatool_name):
         if child_datatool_name not in self.child_list:
             self.child_list.append(child_datatool_name)
 
-    def set_parent(self, parent_datatool_name):
+    def add_parent(self, parent_datatool_name):
         if parent_datatool_name not in self.parent_list:
             self.parent_list.append(parent_datatool_name)
 
