@@ -71,6 +71,26 @@ class DataTool(Rebuildable):
         return descendent_list
 
 
+def get_datamodel(*, daily_path, run_name, num_points, run_doc_string, quiet, overwrite_run_doc_string=False):
+    try:
+        datamodel = DataModel.load_datamodel(daily_path, run_name)
+        if num_points != datamodel.num_points:
+            raise ValueError(f'Specified num_points ({num_points}) does not match num_points for saved datamodel '
+                             f'({num_points}). Changing num_points requires rebuilding the datamodel')
+        if run_doc_string != datamodel.run_doc_string:
+            print('Specified run_doc_string does not match saved run_doc_string')
+            if overwrite_run_doc_string:
+                print('Overwriting run_doc_string.')
+                datamodel.run_doc_string = run_doc_string
+        return datamodel
+    except FileNotFoundError as e:
+        print(e)
+        print(f'Creating new datamodel')
+        datamodel = DataModel(daily_path=daily_path, run_name=run_name, num_points=num_points,
+                              run_doc_string=run_doc_string, quiet=quiet)
+        return datamodel
+
+
 class DataModel(Rebuildable):
     class OverwriteMode(Enum):
         KEEP_OLD = 0
@@ -114,7 +134,8 @@ class DataModel(Rebuildable):
             qprint(f'** Processing shot_{shot_num:05d} **', quiet=quiet)
             self.process_data(shot_num)
         for datatool in self.datatool_dict.values():
-            datatool.reset=False
+            datatool.reset = False
+        self.save_datamodel()
 
     def get_num_shots(self):
         self.num_shots = self.main_datastream.count_shots()

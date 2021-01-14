@@ -24,14 +24,15 @@ class Processor(DataTool):
         self.object_data_dict['processed_shots'] = self.processed_shots
 
     def rebuild_object_data(self, object_data_dict):
+        super(Processor, self).rebuild_object_data(object_data_dict)
         self.processed_shots = object_data_dict['processed_shots']
 
 
 class CountsProcessor(Processor):
-    def __init__(self, *, name, frame_datafield_name, result_datafield_name, roi_slice):
+    def __init__(self, *, name, frame_datafield_name, output_datafield_name, roi_slice):
         super(CountsProcessor, self).__init__(name=name)
         self.frame_datafield_name = frame_datafield_name
-        self.result_datafield_name = result_datafield_name
+        self.result_datafield_name = output_datafield_name
         self.roi_slice = roi_slice
 
         self.add_child(self.result_datafield_name)
@@ -45,10 +46,10 @@ class CountsProcessor(Processor):
 
 
 class MultiCountsProcessor(Processor):
-    def __init__(self, *, name, frame_datafield_name, result_datafield_name_list, roi_slice_array):
+    def __init__(self, *, name, frame_datafield_name, output_datafield_name_list, roi_slice_array):
         super(MultiCountsProcessor, self).__init__(name=name)
         self.frame_datafield_name = frame_datafield_name
-        self.result_datafield_name_list = result_datafield_name_list
+        self.result_datafield_name_list = output_datafield_name_list
         self.roi_slice_array = roi_slice_array
         self.num_points = self.datamodel.num_points
         self.num_regions = len(self.result_datafield_name_list)
@@ -56,7 +57,7 @@ class MultiCountsProcessor(Processor):
             raise ValueError(f'Shape of roi_slice_array much match number of points and number of output datafields.'
                              f' Shape must be ({self.num_points}, {self.num_regions})')
 
-        for result_datafield_name in result_datafield_name_list:
+        for result_datafield_name in output_datafield_name_list:
             self.add_child(result_datafield_name)
         self.add_parent(frame_datafield_name)
 
@@ -68,3 +69,19 @@ class MultiCountsProcessor(Processor):
             roi_frame = frame[roi_slice]
             counts = np.nansum(roi_frame)
             self.datamodel.set_shot_data(result_datafield_name, shot_num, counts)
+
+
+class ThresholdProcessor(Processor):
+    def __init__(self, *, name, input_datafield_name, output_datafield_name, threshold_value):
+        super(ThresholdProcessor, self).__init__(name=name)
+        self.input_datafield_name = input_datafield_name
+        self.output_datafield_name = output_datafield_name
+        self.threshold_value = threshold_value
+
+        self.add_child(self.output_datafield_name)
+        self.add_parent(self.input_datafield_name)
+
+    def _process(self, shot_num):
+        data_value = self.datamodel.get_shot_data(self.input_datafield_name, shot_num)
+        verified = data_value > self.threshold_value
+        self.datamodel.set_shot_data(self.output_datafield_name, shot_num, verified)

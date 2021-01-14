@@ -7,16 +7,18 @@ class DataField(DataTool):
 
 
 class ShotDataField(DataField):
-    def __init__(self, *, name):
-        super(ShotDataField, self).__init__(name=name)
-
-    def contains_shot(self, shot_num):
-        raise NotImplementedError
-
     def get_data(self, shot_num):
         raise NotImplementedError
 
     def set_data(self, shot_num, data):
+        raise NotImplementedError
+
+
+class PointDataField(DataField):
+    def get_data(self, point_num):
+        raise NotImplementedError
+
+    def set_data(self, point_num, data):
         raise NotImplementedError
 
 
@@ -31,9 +33,6 @@ class DataStreamDataField(ShotDataField):
     def set_datamodel(self, datamodel):
         super(DataStreamDataField, self).set_datamodel(datamodel)
         self.datastream = datamodel.datatool_dict[self.datastream_name]
-
-    def contains_shot(self, shot_num):
-        return self.datastream.contains_shot(shot_num)
 
     def get_data(self, shot_num):
         h5_file = self.datastream.load_shot(shot_num)
@@ -60,16 +59,6 @@ class DataDictShotDataField(ShotDataField):
             self.datamodel.data_dict['shot_data'][self.name] = dict()
         self.datafield_dict = self.datamodel.data_dict['shot_data'][self.name]
 
-    def reset(self):
-        self.datafield_dict = dict()
-
-    def contains_shot(self, shot_num):
-        shot_key = f'shot_{shot_num:05d}'
-        if shot_key in self.datafield_dict:
-            return True
-        else:
-            return False
-
     def get_data(self, shot_num):
         shot_key = f'shot_{shot_num:05d}'
         data = self.datafield_dict[shot_key]
@@ -78,3 +67,27 @@ class DataDictShotDataField(ShotDataField):
     def set_data(self, shot_num, data):
         shot_key = f'shot_{shot_num:05d}'
         self.datafield_dict[shot_key] = data
+
+
+class DataDictPointDataField(PointDataField):
+    def __init__(self, *, name):
+        super(DataDictPointDataField, self).__init__(name=name)
+        self.datafield_dict = None
+
+    def set_datamodel(self, datamodel):
+        super(DataDictPointDataField, self).set_datamodel(datamodel)
+        if self.name not in self.datamodel.data_dict['point_data']:
+            self.datamodel.data_dict['point_data'][self.name] = dict()
+            for point_num in range(self.datamodel.num_points):
+                point_key = f'point_{point_num:d}'
+                self.datamodel.data_dict['point_data'][self.name][point_key] = dict()
+        self.datafield_dict = self.datamodel.data_dict['point_data'][self.name]
+
+    def get_data(self, point_num):
+        point_key = f'point_{point_num:d}'
+        data = self.datafield_dict[point_key]
+        return data
+
+    def set_data(self, point_num, data):
+        point_key = f'point_{point_num:d}'
+        self.datafield_dict[point_key] = data
