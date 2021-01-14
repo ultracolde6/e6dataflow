@@ -2,11 +2,14 @@ from datamodel import DataTool
 
 
 class DataField(DataTool):
-    def __init__(self, *, name):
-        super(DataField, self).__init__(name=name, datatool_type=DataTool.SHOT_DATAFIELD)
+    def __init__(self, *, name, datatool_type):
+        super(DataField, self).__init__(name=name, datatool_type=datatool_type)
 
 
 class ShotDataField(DataField):
+    def __init__(self, *, name):
+        super(ShotDataField, self).__init__(name=name, datatool_type=DataTool.SHOT_DATAFIELD)
+
     def get_data(self, shot_num):
         raise NotImplementedError
 
@@ -15,6 +18,9 @@ class ShotDataField(DataField):
 
 
 class PointDataField(DataField):
+    def __init__(self, *, name):
+        super(PointDataField, self).__init__(name=name, datatool_type=DataTool.POINT_DATAFIELD)
+
     def get_data(self, point_num):
         raise NotImplementedError
 

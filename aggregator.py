@@ -1,5 +1,5 @@
 from datamodel import DataTool
-from utils import shot_to_loop_and_point
+from utils import shot_to_loop_and_point, get_shot_list_from_point, list_intersection
 
 
 class Aggregator(DataTool):
@@ -52,12 +52,14 @@ class AverageStdAggregator(Aggregator):
 
     def _aggregate(self, shot_num):
         loop_num, point_num = shot_to_loop_and_point(shot_num, self.datamodel.num_points)
+        point_shot_list, num_loops = get_shot_list_from_point(point_num, self.datamodel.num_points, shot_num)
+        point_aggregated_shots = list_intersection(point_shot_list, self.aggregated_shots)
+        old_n = len(point_aggregated_shots)
         new_data = self.datamodel.get_data(self.input_datafield_name, shot_num)
         try:
             old_result_dict = self.datamodel.get_data(self.output_datafield_name, point_num)
             old_mean = old_result_dict['mean']
             old_std = old_result_dict['std']
-            old_n = len(self.aggregated_shots)
             new_mean = self.calculate_new_mean(old_mean, old_n, new_data)
             new_std = self.calculate_new_std(old_mean, old_std, old_n, new_data)
         except KeyError:

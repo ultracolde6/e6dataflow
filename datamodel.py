@@ -40,6 +40,7 @@ class DataTool(Rebuildable):
     DATASTREAM = 'datastream'
     PROCESSOR = 'processor'
     SHOT_DATAFIELD = 'shot_datafield'
+    POINT_DATAFIELD = 'point_datafield'
     AGGREGATOR = 'aggregator'
     VERIFIER = 'verifier'
 
