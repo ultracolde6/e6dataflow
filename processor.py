@@ -52,10 +52,10 @@ class CountsProcessor(Processor):
 
 
 class MultiCountsProcessor(Processor):
-    def __init__(self, *, name, frame_datafield_name, output_datafield_name_list, roi_slice_array):
+    def __init__(self, *, name, frame_datafield_name, result_datafield_name_list, roi_slice_array):
         super(MultiCountsProcessor, self).__init__(name=name)
         self.frame_datafield_name = frame_datafield_name
-        self.result_datafield_name_list = output_datafield_name_list
+        self.result_datafield_name_list = result_datafield_name_list
         self.roi_slice_array = roi_slice_array
         self.num_points = self.datamodel.num_points
         self.num_regions = len(self.result_datafield_name_list)
@@ -65,7 +65,7 @@ class MultiCountsProcessor(Processor):
 
     def set_datamodel(self, datamodel):
         super(MultiCountsProcessor, self).set_datamodel(datamodel)
-        for result_datafield_name in self.output_datafield_name_list:
+        for result_datafield_name in self.result_datafield_name_list:
             self.add_child(result_datafield_name)
         self.add_parent(self.frame_datafield_name)
 
