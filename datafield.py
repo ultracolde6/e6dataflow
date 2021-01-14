@@ -53,6 +53,10 @@ class DataDictShotDataField(ShotDataField):
         super(DataDictShotDataField, self).__init__(name=name)
         self.datafield_dict = None
 
+    def reset(self):
+        super(DataDictShotDataField, self).reset()
+        self.datafield_dict = dict()
+
     def set_datamodel(self, datamodel):
         super(DataDictShotDataField, self).set_datamodel(datamodel)
         if self.name not in self.datamodel.data_dict['shot_data']:
@@ -73,6 +77,10 @@ class DataDictPointDataField(PointDataField):
     def __init__(self, *, name):
         super(DataDictPointDataField, self).__init__(name=name)
         self.datafield_dict = None
+
+    def reset(self):
+        super(DataDictPointDataField, self).reset()
+        self.datafield_dict = dict()
 
     def set_datamodel(self, datamodel):
         super(DataDictPointDataField, self).set_datamodel(datamodel)

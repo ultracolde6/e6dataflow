@@ -47,9 +47,11 @@ class DataTool(Rebuildable):
         self.name = name
         self.datatool_type = datatool_type
         self.datamodel = None
-        self.reset = False
         self.child_list = []
         self.parent_list = []
+
+    def reset(self):
+        pass
 
     def set_datamodel(self, datamodel):
         self.datamodel = datamodel
@@ -57,10 +59,14 @@ class DataTool(Rebuildable):
     def add_child(self, child_datatool_name):
         if child_datatool_name not in self.child_list:
             self.child_list.append(child_datatool_name)
+            child = self.datamodel.datatool_dict[child_datatool_name]
+            child.add_parent(self.name)
 
     def add_parent(self, parent_datatool_name):
         if parent_datatool_name not in self.parent_list:
             self.parent_list.append(parent_datatool_name)
+            parent = self.datamodel.datatool_dict[parent_datatool_name]
+            parent.add_child(self.name)
 
     def get_descendents(self):
         descendent_list = []
@@ -143,8 +149,6 @@ class DataModel(Rebuildable):
             self.process_data(shot_num)
             # qprint(f'** Aggregating point_{point_num:d} **', quiet=quiet)
             self.aggregate_data(shot_num)
-        for datatool in self.datatool_dict.values():
-            datatool.reset = False
         self.save_datamodel()
 
     def get_num_shots(self):
@@ -183,12 +187,12 @@ class DataModel(Rebuildable):
                     self.datatool_dict[datatool_name] = datatool
                     datatool.set_datamodel(datamodel=self)
                     print(f'Re-running the datamodel may result in overwriting datamodel data. ')
-                    print(f'The following datamodels are configured into reset mode:')
-                    datatool.reset = True
+                    print(f'The following datatools are configured into reset mode:')
+                    datatool.reset()
                     print(f'{datatool.datatool_type}: {datatool.name}')
                     for child_datatool_name in datatool.get_descendents():
                         child_datatool = self.datatool_dict[child_datatool_name]
-                        child_datatool.reset = True
+                        child_datatool.reset()
                         print(f'{child_datatool.datatool_type}: {child_datatool.name}')
                 elif not overwrite:
                     print(f'Using OLD {datatool_type}.')

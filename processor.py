@@ -8,8 +8,12 @@ class Processor(DataTool):
         super(Processor, self).__init__(name=name, datatool_type=DataTool.PROCESSOR)
         self.processed_shots = []
 
+    def reset(self):
+        super(Processor, self).reset()
+        self.processed_shots = []
+
     def process(self, shot_num):
-        if shot_num not in self.processed_shots or self.reset:
+        if shot_num not in self.processed_shots:
             print(f'processing shot {shot_num:05d} with "{self.name}" processor')
             self._process(shot_num)
             self.processed_shots.append(shot_num)
@@ -35,6 +39,8 @@ class CountsProcessor(Processor):
         self.result_datafield_name = output_datafield_name
         self.roi_slice = roi_slice
 
+    def set_datamodel(self, datamodel):
+        super(CountsProcessor, self).set_datamodel(datamodel)
         self.add_child(self.result_datafield_name)
         self.add_parent(self.frame_datafield_name)
 
@@ -57,9 +63,11 @@ class MultiCountsProcessor(Processor):
             raise ValueError(f'Shape of roi_slice_array much match number of points and number of output datafields.'
                              f' Shape must be ({self.num_points}, {self.num_regions})')
 
-        for result_datafield_name in output_datafield_name_list:
+    def set_datamodel(self, datamodel):
+        super(MultiCountsProcessor, self).set_datamodel(datamodel)
+        for result_datafield_name in self.output_datafield_name_list:
             self.add_child(result_datafield_name)
-        self.add_parent(frame_datafield_name)
+        self.add_parent(self.frame_datafield_name)
 
     def _process(self, shot_num):
         frame = self.datamodel.get_data(self.frame_datafield_name, shot_num)

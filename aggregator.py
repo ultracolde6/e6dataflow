@@ -9,8 +9,13 @@ class Aggregator(DataTool):
         self.aggregated_shots = []
         self.num_aggregated_shots = 0
 
+    def reset(self):
+        super(Aggregator, self).reset()
+        self.aggregated_shots = []
+        self.num_aggregated_shots = 0
+
     def aggregate(self, shot_num):
-        if shot_num not in self.aggregated_shots or self.reset:
+        if shot_num not in self.aggregated_shots:
             verified = True
             for verifier_datafield_name in self.verifier_datafield_names:
                 if not self.datamodel.get_data(verifier_datafield_name, shot_num):
@@ -39,6 +44,11 @@ class AverageStdAggregator(Aggregator):
         super(AverageStdAggregator, self).__init__(name=name, verifier_datafield_names=verifier_datafield_names)
         self.input_datafield_name = input_datafield_name
         self.output_datafield_name = output_datafield_name
+
+    def set_datamodel(self, datamodel):
+        super(AverageStdAggregator, self).set_datamodel(datamodel)
+        self.add_child(self.output_datafield_name)
+        self.add_parent(self.input_datafield_name)
 
     def _aggregate(self, shot_num):
         loop_num, point_num = shot_to_loop_and_point(shot_num, self.datamodel.num_points)
