@@ -39,10 +39,10 @@ class CountsProcessor(Processor):
         self.add_parent(self.frame_datafield_name)
 
     def _process(self, shot_num):
-        frame = self.datamodel.get_shot_data(self.frame_datafield_name, shot_num)
+        frame = self.datamodel.get_data(self.frame_datafield_name, shot_num)
         roi_frame = frame[self.roi_slice]
         counts = np.nansum(roi_frame)
-        self.datamodel.set_shot_data(self.result_datafield_name, shot_num, counts)
+        self.datamodel.set_data(self.result_datafield_name, shot_num, counts)
 
 
 class MultiCountsProcessor(Processor):
@@ -62,13 +62,13 @@ class MultiCountsProcessor(Processor):
         self.add_parent(frame_datafield_name)
 
     def _process(self, shot_num):
-        frame = self.datamodel.get_shot_data(self.frame_datafield_name, shot_num)
+        frame = self.datamodel.get_data(self.frame_datafield_name, shot_num)
         loop, point = shot_to_loop_and_point(shot_num, self.datamodel.num_points)
         for roi_num, result_datafield_name in enumerate(self.result_datafield_name_list):
             roi_slice = self.roi_slice_array[point, roi_num]
             roi_frame = frame[roi_slice]
             counts = np.nansum(roi_frame)
-            self.datamodel.set_shot_data(result_datafield_name, shot_num, counts)
+            self.datamodel.set_data(result_datafield_name, shot_num, counts)
 
 
 class ThresholdProcessor(Processor):
@@ -82,6 +82,6 @@ class ThresholdProcessor(Processor):
         self.add_parent(self.input_datafield_name)
 
     def _process(self, shot_num):
-        data_value = self.datamodel.get_shot_data(self.input_datafield_name, shot_num)
+        data_value = self.datamodel.get_data(self.input_datafield_name, shot_num)
         verified = data_value > self.threshold_value
-        self.datamodel.set_shot_data(self.output_datafield_name, shot_num, verified)
+        self.datamodel.set_data(self.output_datafield_name, shot_num, verified)

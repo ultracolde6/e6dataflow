@@ -113,6 +113,7 @@ class DataModel(Rebuildable):
 
         self.data_dict = dict()
         self.data_dict['shot_data'] = dict()
+        self.data_dict['point_data'] = dict()
 
     def get_datastreams(self):
         datastream_list = []
@@ -128,11 +129,20 @@ class DataModel(Rebuildable):
                 processor_list.append(datatool)
         return processor_list
 
+    def get_aggregators(self):
+        aggregator_list = []
+        for datatool in self.datatool_dict.values():
+            if datatool.datatool_type == DataTool.AGGREGATOR:
+                aggregator_list.append(datatool)
+        return aggregator_list
+
     def run(self, quiet=False):
         self.get_num_shots()
         for shot_num in range(self.last_processed_shot, self.num_shots):
             qprint(f'** Processing shot_{shot_num:05d} **', quiet=quiet)
             self.process_data(shot_num)
+            # qprint(f'** Aggregating point_{point_num:d} **', quiet=quiet)
+            self.aggregate_data(shot_num)
         for datatool in self.datatool_dict.values():
             datatool.reset = False
         self.save_datamodel()
@@ -149,6 +159,10 @@ class DataModel(Rebuildable):
     def process_data(self, shot_num):
         for processor in self.get_processors():
             processor.process(shot_num=shot_num)
+
+    def aggregate_data(self, point_num):
+        for aggregator in self.get_aggregators():
+            aggregator.aggregate(shot_num=point_num)
 
     def set_datatool(self, datatool, overwrite=False):
         datatool_name = datatool.name
@@ -190,19 +204,18 @@ class DataModel(Rebuildable):
             self.main_datastream = datastream
 
     def set_shot_datafield(self, datafield, overwrite=False):
-        print(f'adding shot_datafield: {datafield.name}')
         self.set_datatool(datatool=datafield, overwrite=overwrite)
 
     def set_processor(self, processor, overwrite=False):
         self.set_datatool(datatool=processor, overwrite=overwrite)
 
-    def get_shot_data(self, shot_datafield_name, shot_num):
-        shot_datafield = self.datatool_dict[shot_datafield_name]
-        data = shot_datafield.get_data(shot_num)
+    def get_data(self, datafield_name, shot_num):
+        datafield = self.datatool_dict[datafield_name]
+        data = datafield.get_data(shot_num)
         return data
 
-    def set_shot_data(self, shot_datafield_name, shot_num, data):
-        shot_datafield = self.datatool_dict[shot_datafield_name]
+    def set_data(self, datafield_name, shot_num, data):
+        shot_datafield = self.datatool_dict[datafield_name]
         shot_datafield.set_data(shot_num, data)
 
     @staticmethod

@@ -40,7 +40,7 @@ class DataStreamDataField(ShotDataField):
             h5_group = h5_file[self.h5_subpath]
         else:
             h5_group = h5_file
-        data = h5_group[self.h5_dataset_name]
+        data = h5_group[self.h5_dataset_name][:].astype(float)
         return data
 
     def set_data(self, shot_num, data):

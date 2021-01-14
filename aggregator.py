@@ -1,4 +1,5 @@
 from datamodel import DataTool
+from utils import shot_to_loop_and_point
 
 
 class Aggregator(DataTool):
@@ -9,13 +10,17 @@ class Aggregator(DataTool):
         self.num_aggregated_shots = 0
 
     def aggregate(self, shot_num):
-        verified = True
-        for verifier_datafield_name in self.verifier_datafield_names:
-            if not self.datamodel.get_shot_data(verifier_datafield_name, shot_num):
-                verified = False
-        if verified:
-            self._aggregate(shot_num)
-            self.aggregated_shots.append(shot_num)
+        if shot_num not in self.aggregated_shots or self.reset:
+            verified = True
+            for verifier_datafield_name in self.verifier_datafield_names:
+                if not self.datamodel.get_data(verifier_datafield_name, shot_num):
+                    verified = False
+            if verified:
+                print(f'aggregating shot {shot_num:05d} with "{self.name}" aggregator')
+                self._aggregate(shot_num)
+                self.aggregated_shots.append(shot_num)
+        else:
+            print(f'skipping shot {shot_num:05d} with "{self.name}" aggregator')
 
     def _aggregate(self, shot_num):
         raise NotImplementedError
@@ -35,11 +40,13 @@ class AverageStdAggregator(Aggregator):
         self.input_datafield_name = input_datafield_name
         self.output_datafield_name = output_datafield_name
 
-    def _aggregate(self, point_num):
-        new_data = self.datamodel.get_shot_data(self.input_datafield_name, point_num)
+    def _aggregate(self, shot_num):
+        loop_num, point_num = shot_to_loop_and_point(shot_num, self.datamodel.num_points)
+        new_data = self.datamodel.get_data(self.input_datafield_name, shot_num)
         try:
-            old_mean = self.datamodel.get_point_data(self.output_datafield_name)['mean']
-            old_std = self.datamodel.get_point_data(self.output_datafield_name)['std']
+            old_result_dict = self.datamodel.get_data(self.output_datafield_name, point_num)
+            old_mean = old_result_dict['mean']
+            old_std = old_result_dict['std']
             old_n = len(self.aggregated_shots)
             new_mean = self.calculate_new_mean(old_mean, old_n, new_data)
             new_std = self.calculate_new_std(old_mean, old_std, old_n, new_data)
@@ -47,11 +54,12 @@ class AverageStdAggregator(Aggregator):
             new_mean = new_data
             new_std = 0
         result_dict = {'mean': new_mean, 'std': new_std}
-        self.datamodel.set_point_data(self.output_datafield_name, result_dict)
+        self.datamodel.set_data(self.output_datafield_name, point_num, result_dict)
 
     @staticmethod
     def calculate_new_mean(old_mean, old_n, new_data):
-        new_mean = (old_mean * old_n + new_data) / (old_n + 1)
+        new_n = old_n + 1
+        new_mean = old_mean + (new_data - old_mean) / new_n
         return new_mean
 
     @classmethod
@@ -59,6 +67,8 @@ class AverageStdAggregator(Aggregator):
         new_n = old_n + 1
         new_mean = cls.calculate_new_mean(old_mean, old_n, new_data)
         old_variance = old_std ** 2
-        new_variance = ((new_n - 2) * old_variance + (new_data - new_mean) * (new_data - old_mean)) / (new_n - 1)
-        new_std = new_variance ** (1/2)
+        old_sos = (old_n - 1) * old_variance
+        new_sos = old_sos + (new_data - old_mean) * (new_data - new_mean)
+        new_variance = new_sos / (new_n - 1)
+        new_std = new_variance ** (1 / 2)
         return new_std
