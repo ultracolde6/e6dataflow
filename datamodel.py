@@ -42,7 +42,7 @@ class DataTool(Rebuildable):
     SHOT_DATAFIELD = 'shot_datafield'
     POINT_DATAFIELD = 'point_datafield'
     AGGREGATOR = 'aggregator'
-    VERIFIER = 'verifier'
+    REPORTER = 'reporter'
 
     def __init__(self, *, name, datatool_type):
         self.name = name
@@ -129,27 +129,21 @@ class DataModel(Rebuildable):
                 datastream_list.append(datatool)
         return datastream_list
 
-    def get_processors(self):
-        processor_list = []
+    def get_datatool_of_type(self, datatool_type):
+        datatool_list = []
         for datatool in self.datatool_dict.values():
-            if datatool.datatool_type == DataTool.PROCESSOR:
-                processor_list.append(datatool)
-        return processor_list
-
-    def get_aggregators(self):
-        aggregator_list = []
-        for datatool in self.datatool_dict.values():
-            if datatool.datatool_type == DataTool.AGGREGATOR:
-                aggregator_list.append(datatool)
-        return aggregator_list
+            if datatool.datatool_type == datatool_type:
+                datatool_list.append(datatool)
+        return datatool_list
 
     def run(self, quiet=False):
         self.get_num_shots()
         for shot_num in range(self.last_processed_shot, self.num_shots):
             qprint(f'** Processing shot_{shot_num:05d} **', quiet=quiet)
             self.process_data(shot_num)
-            # qprint(f'** Aggregating point_{point_num:d} **', quiet=quiet)
             self.aggregate_data(shot_num)
+            self.last_processed_shot = shot_num
+        self.report(self.last_processed_shot)
         self.save_datamodel()
 
     def get_num_shots(self):
@@ -162,12 +156,16 @@ class DataModel(Rebuildable):
                                   f'"{self.main_datastream.name}" ({self.num_shots:d})')
 
     def process_data(self, shot_num):
-        for processor in self.get_processors():
+        for processor in self.get_datatool_of_type(DataTool.PROCESSOR):
             processor.process(shot_num=shot_num)
 
-    def aggregate_data(self, point_num):
-        for aggregator in self.get_aggregators():
-            aggregator.aggregate(shot_num=point_num)
+    def aggregate_data(self, shot_num):
+        for aggregator in self.get_datatool_of_type(DataTool.AGGREGATOR):
+            aggregator.aggregate(shot_num=shot_num)
+
+    def report(self, shot_num):
+        for reporter in self.get_datatool_of_type(DataTool.REPORTER):
+            reporter.report(shot_num=shot_num)
 
     def set_datatool(self, datatool, overwrite=False):
         datatool_name = datatool.name
