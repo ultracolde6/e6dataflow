@@ -43,6 +43,7 @@ class DataTool(Rebuildable):
     POINT_DATAFIELD = 'point_datafield'
     AGGREGATOR = 'aggregator'
     REPORTER = 'reporter'
+    SINGLE_SHOT_REPORTER = 'single_shot_reporter'
 
     def __init__(self, *, name, datatool_type):
         self.name = name
@@ -81,6 +82,35 @@ class DataTool(Rebuildable):
         return descendent_list
 
 
+class ShotHandler(DataTool):
+    def __init__(self, *, name, datatool_type):
+        super(ShotHandler, self).__init__(name=name, datatool_type=datatool_type)
+        self.handled_shots = []
+
+    def reset(self):
+        super(ShotHandler, self).reset()
+        self.handled_shots = []
+
+    def handle(self, shot_num):
+        if shot_num not in self.handled_shots:
+            print(f'handling shot {shot_num:05d} with "{self.name}" {self.datatool_type}')
+            self._handle(shot_num)
+            self.handled_shots.append(shot_num)
+        else:
+            print(f'skipping shot {shot_num:05d} with "{self.name}" {self.datatool_type}')
+
+    def _handle(self, shot_num):
+        raise NotImplementedError
+
+    def package_rebuild_dict(self):
+        super(ShotHandler, self).package_rebuild_dict()
+        self.object_data_dict['handled_shots'] = self.handled_shots
+
+    def rebuild_object_data(self, object_data_dict):
+        super(ShotHandler, self).rebuild_object_data(object_data_dict)
+        self.handled_shots = object_data_dict['handled_shots']
+
+
 def get_datamodel(*, daily_path, run_name, num_points, run_doc_string, quiet, overwrite_run_doc_string=False):
     try:
         datamodel = DataModel.load_datamodel(daily_path, run_name)
@@ -115,7 +145,7 @@ class DataModel(Rebuildable):
         self.quiet = quiet
 
         self.num_shots = 0
-        self.last_processed_shot = 0
+        self.last_handled_shot = 0
         self.datamodel_file_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
 
         self.datatool_dict = dict()
@@ -141,12 +171,12 @@ class DataModel(Rebuildable):
 
     def run(self, quiet=False):
         self.get_num_shots()
-        for shot_num in range(self.last_processed_shot, self.num_shots):
+        for shot_num in range(self.last_handled_shot, self.num_shots):
             qprint(f'** Processing shot_{shot_num:05d} **', quiet=quiet)
             self.process_data(shot_num)
             self.aggregate_data(shot_num)
-            self.last_processed_shot = shot_num
-        self.report(self.last_processed_shot)
+            self.last_handled_shot = shot_num
+        self.report(self.last_handled_shot)
         self.save_datamodel()
 
     def get_num_shots(self):
@@ -170,7 +200,7 @@ class DataModel(Rebuildable):
         for reporter in self.get_datatool_of_type(DataTool.REPORTER):
             reporter.report(shot_num=shot_num)
 
-    def set_datatool(self, datatool, overwrite=False):
+    def add_datatool(self, datatool, overwrite=False):
         datatool_name = datatool.name
         datatool_type = datatool.datatool_type
         datatool_exists = datatool_name in self.datatool_dict
@@ -196,9 +226,11 @@ class DataModel(Rebuildable):
                         child_datatool = self.datatool_dict[child_datatool_name]
                         child_datatool.reset()
                         print(f'{child_datatool.datatool_type}: {child_datatool.name}')
-                    self.last_processed_shot = 0
+                    self.last_handled_shot = 0
                 elif not overwrite:
                     print(f'Using OLD {datatool_type}.')
+        if datatool.datatool_type == DataTool.DATASTREAM and self.main_datastream is None:
+            self.main_datastream = self.datatool_dict[datatool_name]
 
     def link_datatools(self):
         for datatool in self.datatool_dict.values():
@@ -210,15 +242,15 @@ class DataModel(Rebuildable):
         self.set_datastream(datastream, set_main_datastream=set_main_datastream, overwrite=overwrite)
 
     def set_datastream(self, datastream, set_main_datastream=False, overwrite=False):
-        self.set_datatool(datatool=datastream, overwrite=overwrite)
+        self.add_datatool(datatool=datastream, overwrite=overwrite)
         if set_main_datastream or self.main_datastream is None:
             self.main_datastream = datastream
 
     def set_shot_datafield(self, datafield, overwrite=False):
-        self.set_datatool(datatool=datafield, overwrite=overwrite)
+        self.add_datatool(datatool=datafield, overwrite=overwrite)
 
     def set_processor(self, processor, overwrite=False):
-        self.set_datatool(datatool=processor, overwrite=overwrite)
+        self.add_datatool(datatool=processor, overwrite=overwrite)
 
     def get_data(self, datafield_name, data_index):
         datafield = self.datatool_dict[datafield_name]
@@ -246,7 +278,7 @@ class DataModel(Rebuildable):
     def package_rebuild_dict(self):
         super(DataModel, self).package_rebuild_dict()
         self.object_data_dict['num_shots'] = self.num_shots
-        self.object_data_dict['last_processed_shot'] = self.last_processed_shot
+        self.object_data_dict['last_handled_shot'] = self.last_handled_shot
         self.object_data_dict['datamodel_file_path'] = self.datamodel_file_path
 
         self.object_data_dict['datatools'] = dict()
@@ -260,16 +292,17 @@ class DataModel(Rebuildable):
     def rebuild_object_data(self, object_data_dict):
         super(DataModel, self).rebuild_object_data(object_data_dict)
         self.num_shots = object_data_dict['num_shots']
-        self.last_processed_shot = object_data_dict['last_processed_shot']
+        self.last_handled_shot = object_data_dict['last_handled_shot']
         self.datamodel_file_path = object_data_dict['datamodel_file_path']
 
         self.data_dict = object_data_dict['data_dict']
 
         for datatool_rebuild_dict in object_data_dict['datatools'].values():
             datatool = Rebuildable.rebuild(rebuild_dict=datatool_rebuild_dict)
-            self.set_datatool(datatool, overwrite=False)
+            self.add_datatool(datatool, overwrite=False)
 
         self.main_datastream = self.datatool_dict[object_data_dict['main_datastream']]
+        self.link_datatools()
 
 
 class DataStream(DataTool):

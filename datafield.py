@@ -16,6 +16,13 @@ class ShotDataField(DataField):
     def set_data(self, shot_num, data):
         raise NotImplementedError
 
+    def get_data_list(self):
+        data_list = []
+        for shot_num in range(self.datamodel.last_handled_shot):
+            data = self.get_data(shot_num)
+            data_list.append(data)
+        return data_list
+
 
 class PointDataField(DataField):
     def __init__(self, *, name):
@@ -61,7 +68,8 @@ class DataDictShotDataField(ShotDataField):
 
     def reset(self):
         super(DataDictShotDataField, self).reset()
-        self.datafield_dict = dict()
+        self.datamodel.data_dict['shot_data'][self.name] = dict()
+        self.datafield_dict = self.datamodel.data_dict['shot_data'][self.name]
 
     def link_within_datamodel(self):
         super(DataDictShotDataField, self).link_within_datamodel()
@@ -86,7 +94,11 @@ class DataDictPointDataField(PointDataField):
 
     def reset(self):
         super(DataDictPointDataField, self).reset()
-        self.datafield_dict = dict()
+        self.datamodel.data_dict['point_data'][self.name] = dict()
+        for point_num in range(self.datamodel.num_points):
+            point_key = f'point_{point_num:d}'
+            self.datamodel.data_dict['point_data'][self.name][point_key] = dict()
+        self.datafield_dict = self.datamodel.data_dict['point_data'][self.name]
 
     def link_within_datamodel(self):
         super(DataDictPointDataField, self).link_within_datamodel()

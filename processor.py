@@ -1,35 +1,20 @@
 import numpy as np
-from datamodel import DataTool
+from datamodel import DataTool, ShotHandler
 from utils import shot_to_loop_and_point
 
 
-class Processor(DataTool):
+class Processor(ShotHandler):
     def __init__(self, *, name):
         super(Processor, self).__init__(name=name, datatool_type=DataTool.PROCESSOR)
-        self.processed_shots = []
-
-    def reset(self):
-        super(Processor, self).reset()
-        self.processed_shots = []
 
     def process(self, shot_num):
-        if shot_num not in self.processed_shots:
-            print(f'processing shot {shot_num:05d} with "{self.name}" processor')
-            self._process(shot_num)
-            self.processed_shots.append(shot_num)
-        else:
-            print(f'skipping shot {shot_num:05d} with "{self.name}" processor')
+        self.handle(shot_num)
+
+    def _handle(self, shot_num):
+        self._process(shot_num)
 
     def _process(self, shot_num):
         raise NotImplementedError
-
-    def package_rebuild_dict(self):
-        super(Processor, self).package_rebuild_dict()
-        self.object_data_dict['processed_shots'] = self.processed_shots
-
-    def rebuild_object_data(self, object_data_dict):
-        super(Processor, self).rebuild_object_data(object_data_dict)
-        self.processed_shots = object_data_dict['processed_shots']
 
 
 class CountsProcessor(Processor):
@@ -57,14 +42,9 @@ class MultiCountsProcessor(Processor):
         self.frame_datafield_name = frame_datafield_name
         self.result_datafield_name_list = result_datafield_name_list
         self.roi_slice_array = roi_slice_array
-        # self.num_points = self.datamodel.num_points
-        # self.num_regions = len(self.result_datafield_name_list)
-        # if roi_slice_array.shape is not (self.num_points, self.num_regions):
-        #     raise ValueError(f'Shape of roi_slice_array much match number of points and number of output datafields.'
-        #                      f' Shape must be ({self.num_points}, {self.num_regions})')
 
     def link_within_datamodel(self):
-        super(MultiCountsProcessor, self).set_datamodel()
+        super(MultiCountsProcessor, self).link_within_datamodel()
         for result_datafield_name in self.result_datafield_name_list:
             self.add_child(result_datafield_name)
         self.add_parent(self.frame_datafield_name)
