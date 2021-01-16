@@ -57,6 +57,9 @@ class DataTool(Rebuildable):
     def set_datamodel(self, datamodel):
         self.datamodel = datamodel
 
+    def link_within_datamodel(self):
+        pass
+
     def add_child(self, child_datatool_name):
         if child_datatool_name not in self.child_list:
             self.child_list.append(child_datatool_name)
@@ -193,8 +196,13 @@ class DataModel(Rebuildable):
                         child_datatool = self.datatool_dict[child_datatool_name]
                         child_datatool.reset()
                         print(f'{child_datatool.datatool_type}: {child_datatool.name}')
+                    self.last_processed_shot = 0
                 elif not overwrite:
                     print(f'Using OLD {datatool_type}.')
+
+    def link_datatools(self):
+        for datatool in self.datatool_dict.values():
+            datatool.link_within_datamodel()
 
     def create_datastream(self, name, file_prefix, set_main_datastream=False, overwrite=False):
         datastream = DataStream(name=name, daily_path=self.daily_path,
@@ -212,14 +220,14 @@ class DataModel(Rebuildable):
     def set_processor(self, processor, overwrite=False):
         self.set_datatool(datatool=processor, overwrite=overwrite)
 
-    def get_data(self, datafield_name, shot_num):
+    def get_data(self, datafield_name, data_index):
         datafield = self.datatool_dict[datafield_name]
-        data = datafield.get_data(shot_num)
+        data = datafield.get_data(data_index)
         return data
 
-    def set_data(self, datafield_name, shot_num, data):
+    def set_data(self, datafield_name, data_index, data):
         shot_datafield = self.datatool_dict[datafield_name]
-        shot_datafield.set_data(shot_num, data)
+        shot_datafield.set_data(data_index, data)
 
     @staticmethod
     def load_datamodel(daily_path, run_name):

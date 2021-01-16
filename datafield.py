@@ -36,9 +36,9 @@ class DataStreamDataField(ShotDataField):
         self.h5_dataset_name = h5_dataset_name
         self.datastream = None
 
-    def set_datamodel(self, datamodel):
-        super(DataStreamDataField, self).set_datamodel(datamodel)
-        self.datastream = datamodel.datatool_dict[self.datastream_name]
+    def link_within_datamodel(self):
+        super(DataStreamDataField, self).link_within_datamodel()
+        self.datastream = self.datamodel.datatool_dict[self.datastream_name]
 
     def get_data(self, shot_num):
         h5_file = self.datastream.load_shot(shot_num)
@@ -63,8 +63,8 @@ class DataDictShotDataField(ShotDataField):
         super(DataDictShotDataField, self).reset()
         self.datafield_dict = dict()
 
-    def set_datamodel(self, datamodel):
-        super(DataDictShotDataField, self).set_datamodel(datamodel)
+    def link_within_datamodel(self):
+        super(DataDictShotDataField, self).link_within_datamodel()
         if self.name not in self.datamodel.data_dict['shot_data']:
             self.datamodel.data_dict['shot_data'][self.name] = dict()
         self.datafield_dict = self.datamodel.data_dict['shot_data'][self.name]
@@ -88,8 +88,8 @@ class DataDictPointDataField(PointDataField):
         super(DataDictPointDataField, self).reset()
         self.datafield_dict = dict()
 
-    def set_datamodel(self, datamodel):
-        super(DataDictPointDataField, self).set_datamodel(datamodel)
+    def link_within_datamodel(self):
+        super(DataDictPointDataField, self).link_within_datamodel()
         if self.name not in self.datamodel.data_dict['point_data']:
             self.datamodel.data_dict['point_data'][self.name] = dict()
             for point_num in range(self.datamodel.num_points):

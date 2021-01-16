@@ -39,8 +39,8 @@ class CountsProcessor(Processor):
         self.result_datafield_name = output_datafield_name
         self.roi_slice = roi_slice
 
-    def set_datamodel(self, datamodel):
-        super(CountsProcessor, self).set_datamodel(datamodel)
+    def link_within_datamodel(self):
+        super(CountsProcessor, self).link_within_datamodel()
         self.add_child(self.result_datafield_name)
         self.add_parent(self.frame_datafield_name)
 
@@ -57,14 +57,14 @@ class MultiCountsProcessor(Processor):
         self.frame_datafield_name = frame_datafield_name
         self.result_datafield_name_list = result_datafield_name_list
         self.roi_slice_array = roi_slice_array
-        self.num_points = self.datamodel.num_points
-        self.num_regions = len(self.result_datafield_name_list)
-        if roi_slice_array.shape is not (self.num_points, self.num_regions):
-            raise ValueError(f'Shape of roi_slice_array much match number of points and number of output datafields.'
-                             f' Shape must be ({self.num_points}, {self.num_regions})')
+        # self.num_points = self.datamodel.num_points
+        # self.num_regions = len(self.result_datafield_name_list)
+        # if roi_slice_array.shape is not (self.num_points, self.num_regions):
+        #     raise ValueError(f'Shape of roi_slice_array much match number of points and number of output datafields.'
+        #                      f' Shape must be ({self.num_points}, {self.num_regions})')
 
-    def set_datamodel(self, datamodel):
-        super(MultiCountsProcessor, self).set_datamodel(datamodel)
+    def link_within_datamodel(self):
+        super(MultiCountsProcessor, self).set_datamodel()
         for result_datafield_name in self.result_datafield_name_list:
             self.add_child(result_datafield_name)
         self.add_parent(self.frame_datafield_name)
@@ -86,6 +86,8 @@ class ThresholdProcessor(Processor):
         self.output_datafield_name = output_datafield_name
         self.threshold_value = threshold_value
 
+    def link_within_datamodel(self):
+        super(ThresholdProcessor, self).link_within_datamodel()
         self.add_child(self.output_datafield_name)
         self.add_parent(self.input_datafield_name)
 

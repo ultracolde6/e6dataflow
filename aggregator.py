@@ -45,8 +45,8 @@ class AverageStdAggregator(Aggregator):
         self.input_datafield_name = input_datafield_name
         self.output_datafield_name = output_datafield_name
 
-    def set_datamodel(self, datamodel):
-        super(AverageStdAggregator, self).set_datamodel(datamodel)
+    def link_within_datamodel(self):
+        super(AverageStdAggregator, self).link_within_datamodel()
         self.add_child(self.output_datafield_name)
         self.add_parent(self.input_datafield_name)
 

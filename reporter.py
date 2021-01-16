@@ -111,3 +111,38 @@ class LoopReporter(PlotReporter):
                 ax = self.fig.add_subplot(num_points, 1, point + 1)
                 self.ax_list.append(ax)
             self.fig.set_tight_layout(True)
+
+
+class ImagePointReporter(Reporter):
+    def __init__(self, name, input_datafield_name, single_figure=True):
+        super(ImagePointReporter, self).__init__(name=name)
+        self.input_datafield_name = input_datafield_name
+        self.single_figure = single_figure
+        self.initialized = False
+        self.fig_list = []
+        self.ax_list = []
+
+    def report(self, shot_num):
+        if not self.initialized:
+            self.make_plot()
+        for point in range(self.datamodel.num_points):
+            ax = self.ax_list[point]
+            ax.clear()
+            data = self.datamodel.get_data(self.input_datafield_name, point)['mean']
+            ax.imshow(data)
+
+    def make_plot(self):
+        num_points = self.datamodel.num_points
+        if self.single_figure:
+            fig = plt.figure(figsize=[4, 4 * num_points])
+            for point in range(num_points):
+                ax = fig.add_subplot(num_points, 1, point + 1)
+                self.ax_list.append(ax)
+            self.fig_list.append(fig)
+        else:
+            for point in range(num_points):
+                fig = plt.figure(figsize=[8, 8])
+                ax = fig.add_subplot(1, 1, 1)
+                self.fig_list.append(fig)
+                self.ax_list.append(ax)
+        self.initialized = True
