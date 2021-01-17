@@ -1,5 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 from pathlib import Path
 from datamodel import DataTool, ShotHandler
 from utils import get_shot_list_from_point, shot_to_loop_and_point
@@ -62,9 +63,10 @@ class PointReporter(Reporter):
 
 
 class ShotImageReporter(SingleShotReporter):
-    def __init__(self, *, name, save_data, img_datafield_name_list):
+    def __init__(self, *, name, save_data, img_datafield_name_list, roi_dict):
         super(ShotImageReporter, self).__init__(name=name, save_data=save_data)
         self.img_datafield_name_list = img_datafield_name_list
+        self.roi_dict = roi_dict
         self.num_img = len(self.img_datafield_name_list)
         self.ax_list = []
         self.imshow_list = []
@@ -84,6 +86,17 @@ class ShotImageReporter(SingleShotReporter):
             self.imshow_list[img_num] = ax.imshow(img)
             vmin = min(vmin, img.min())
             vmax = max(vmax, img.max())
+            if datafield_name in self.roi_dict:
+                roi_list = self.roi_dict[datafield_name]
+                for roi in roi_list:
+                    horizontal_slice = roi[1]
+                    horizontal_span = horizontal_slice.stop - horizontal_slice.start
+                    vertical_slice = roi[0]
+                    vertical_span = vertical_slice.stop - vertical_slice.start
+                    rect = Rectangle((horizontal_slice.start, vertical_slice.start), horizontal_span, vertical_span,
+                                     linewidth=1, edgecolor='white', facecolor='none')
+                    ax.add_patch(rect)
+
         for imshow_object in self.imshow_list:
             imshow_object.set_clim(vmin=vmin, vmax=vmax)
         loop_num, point_num = shot_to_loop_and_point(shot_num, num_points=self.datamodel.num_points)
@@ -91,7 +104,6 @@ class ShotImageReporter(SingleShotReporter):
         point_key = f'point_{point_num:02d}'
         shot_key = f'shot_{shot_num:05d}'
         self.fig.suptitle(f'{self.name} - {shot_key} - {point_key} - {loop_key}')
-        # self.fig.set_tight_layout({'rect': [0, 0, 1, 0.95]})
         self.fig.canvas.draw()
         plt.pause(0.005)
 
