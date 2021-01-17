@@ -8,11 +8,16 @@ from utils import shot_to_loop_and_point
 
 
 class SingleShotReporter(Reporter, ShotHandler):
-    def __init__(self, *, name, save_data):
+    def __init__(self, *, name, datafield_list, layout, save_data):
         super(SingleShotReporter, self).__init__(name=name, reporter_type=DataTool.SINGLE_SHOT_REPORTER,
+                                                 datafield_list=datafield_list, layout=layout,
                                                  save_data=save_data)
-        self.fig = plt.figure()
-        self.fig.canvas.set_window_title(self.name)
+        self.fig = plt.figure(self.name, figsize=(4 * self.num_rows, 4 * self.num_cols))
+        self.ax_list = []
+        self.plot_list = []
+        for ax_num in range(self.num_datafields):
+            ax = self.fig.add_subplot(self.num_rows, self.num_cols, ax_num + 1)
+            self.ax_list.append(ax)
 
     def report(self, shot_num):
         self.handle(shot_num)
@@ -48,7 +53,6 @@ class ShotImageReporter(SingleShotReporter):
         for img_num in range(self.num_img):
             ax = self.fig.add_subplot(1, self.num_img, img_num + 1)
             self.ax_list.append(ax)
-            self.imshow_list.append(None)
         self.fig.set_size_inches(4 * self.num_img, 4)
 
     def _report(self, shot_num):
@@ -58,7 +62,11 @@ class ShotImageReporter(SingleShotReporter):
             ax = self.ax_list[img_num]
             ax.clear()
             img = self.datamodel.get_data(datafield_name, shot_num)
-            self.imshow_list[img_num] = ax.imshow(img)
+            plot = ax.imshow(img)
+            try:
+                self.imshow_list[img_num] = plot
+            except IndexError:
+                self.imshow_list.append(plot)
             vmin = min(vmin, img.min())
             vmax = max(vmax, img.max())
             if datafield_name in self.roi_dict:

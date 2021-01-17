@@ -1,12 +1,21 @@
-import matplotlib.pyplot as plt
+import numpy as np
 from pathlib import Path
 from datatool import DataTool
 
 
 class Reporter(DataTool):
-    def __init__(self, name, reporter_type, save_data):
+    LAYOUT_HORIZONTAL = 'horizontal'
+    LAYOUT_VERTICAL = 'vertical'
+    LAYOUT_GRID = 'grid'
+
+    def __init__(self, *, name, reporter_type, datafield_list, layout, save_data):
         super(Reporter, self).__init__(name=name, datatool_type=reporter_type)
+        self.datafield_list = datafield_list
+        self.layout = layout
         self.save_data = save_data
+
+        self.num_datafields = len(self.datafield_list)
+        self.num_rows, self.num_cols = get_layout(self.num_datafields, layout)
         self.save_path = None
 
     def link_within_datamodel(self):
@@ -14,7 +23,21 @@ class Reporter(DataTool):
         self.save_path = Path(self.datamodel.daily_path, 'analysis', self.datamodel.run_name, 'reporters', self.name)
 
 
-
+def get_layout(num_plots, layout=Reporter.LAYOUT_GRID):
+    if layout == Reporter.LAYOUT_GRID:
+        nearest_square = np.ceil(num_plots ** (1 / 2))
+        num_rows = np.ceil(num_plots / nearest_square)
+        num_cols = nearest_square
+    elif layout == Reporter.LAYOUT_HORIZONTAL:
+        num_rows = num_plots
+        num_cols = 1
+    elif layout == Reporter.LAYOUT_VERTICAL:
+        num_rows = 1
+        num_cols = num_plots
+    else:
+        num_rows = 1
+        num_cols = num_plots
+    return num_rows, num_cols
 
 
 
