@@ -175,6 +175,7 @@ class DataModel(Rebuildable):
             qprint(f'** Processing shot_{shot_num:05d} **', quiet=quiet)
             self.process_data(shot_num)
             self.aggregate_data(shot_num)
+            self.report_single_shot(shot_num)
             self.last_handled_shot = shot_num
         self.report(self.last_handled_shot)
         self.save_datamodel()
@@ -198,6 +199,10 @@ class DataModel(Rebuildable):
 
     def report(self, shot_num):
         for reporter in self.get_datatool_of_type(DataTool.REPORTER):
+            reporter.report(shot_num=shot_num)
+
+    def report_single_shot(self, shot_num):
+        for reporter in self.get_datatool_of_type(DataTool.SINGLE_SHOT_REPORTER):
             reporter.report(shot_num=shot_num)
 
     def add_datatool(self, datatool, overwrite=False):
