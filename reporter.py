@@ -11,7 +11,6 @@ class Reporter(DataTool):
         super(Reporter, self).__init__(name=name, datatool_type=reporter_type)
         self.save_data = save_data
         self.save_path = None
-        self.fig = plt.figure()
 
     def link_within_datamodel(self):
         super(Reporter, self).link_within_datamodel()
@@ -22,6 +21,8 @@ class SingleShotReporter(Reporter, ShotHandler):
     def __init__(self, *, name, save_data):
         super(SingleShotReporter, self).__init__(name=name, reporter_type=DataTool.SINGLE_SHOT_REPORTER,
                                                  save_data=save_data)
+        self.fig = plt.figure()
+        self.fig.canvas.set_window_title(self.name)
 
     def report(self, shot_num):
         self.handle(shot_num)
@@ -47,9 +48,22 @@ class SingleShotReporter(Reporter, ShotHandler):
 
 
 class PointReporter(Reporter):
+    def __init__(self, *, name, save_data):
+        super().__init__(name=name, reporter_type=DataTool.POINT_REPORTER, save_data=save_data)
+        self.fig_list = []
+
+    def link_within_datamodel(self):
+        super().link_within_datamodel()
+        for point in range(self.datamodel.num_points):
+            fig = plt.figure()
+            self.fig_list.append(fig)
+            fig.canvas.set_window_title(f'{self.name} - point_{point:02d}')
+
     def report(self):
         for point_num in range(self.datamodel.num_points):
             self.report_point(point_num)
+            if self.save_data:
+                self.save(point_num)
 
     def report_point(self, point_num):
         raise NotImplementedError
@@ -59,7 +73,7 @@ class PointReporter(Reporter):
         file_name = f'{self.name} - {point_key}.png'
         file_path = Path(self.save_path, file_name)
         self.save_path.mkdir(parents=True, exist_ok=True)
-        self.fig.savefig(file_path)
+        self.fig_list[point_num].savefig(file_path)
 
 
 class ShotImageReporter(SingleShotReporter):
@@ -106,6 +120,35 @@ class ShotImageReporter(SingleShotReporter):
         self.fig.suptitle(f'{self.name} - {shot_key} - {point_key} - {loop_key}')
         self.fig.canvas.draw()
         plt.pause(0.005)
+
+
+class PlotAllShotReporter(PointReporter):
+    def __init__(self, *, name, save_data, datafield_name_list, ymin=None, ymax=None):
+        super(PlotAllShotReporter, self).__init__(name=name, save_data=save_data)
+        self.datafield_name_list = datafield_name_list
+        self.ymin = ymin
+        self.ymax = ymax
+        self.ax_dict = dict()
+
+    def link_within_datamodel(self):
+        super(PlotAllShotReporter, self).link_within_datamodel()
+        num_datafields = len(self.datafield_name_list)
+        for point_num in range(self.datamodel.num_points):
+            point_key = f'point_{point_num:02d}'
+            self.ax_dict[point_key] = dict()
+            fig = self.fig_list[point_num]
+            for idx, datafield_name in enumerate(self.datafield_name_list):
+                self.ax_dict[point_key][datafield_name] = fig.add_subplot(1, num_datafields, idx+1)
+
+    def report_point(self, point_num):
+        print(point_num)
+        point_key = f'point_{point_num:02d}'
+        fig = self.fig_list[point_num]
+        for datafield_name in self.datafield_name_list:
+            data = self.datamodel.get_data_by_point(datafield_name, point_num)
+            ax = self.ax_dict[point_key][datafield_name]
+            ax.plot(data, '.')
+            fig.canvas.draw()
 
 #
 #
@@ -221,15 +264,16 @@ class ShotImageReporter(SingleShotReporter):
 #         self.initialized = True
 
 
-def auto_ax_lims(data, lower_lim=None, upper_lim=None):
-        data_min = min(data)
-        data_max = max(data)
-        data_center = (data_max + data_min) / 2
-        data_half_range = data_max - data_min
-        auto_range = [data_center - 1.1 * data_half_range, data_center + 1.1 * data_half_range]
-        lims = auto_range
-        if lower_lim is not None:
-            lims[0] = lower_lim
-        if upper_lim is not None:
-            lims[1] = upper_lim
-        return lims
+def expand_range(lims, expansion_factor, min_lim=None, max_lim=None):
+    lower = lims[0]
+    upper = lims[1]
+    range_span = upper - lower
+    expanded_range = range_span * expansion_factor
+    expanded_half_range = expanded_range / 2
+    range_center = (upper + lower) / 2
+    new_range = [range_center - expanded_half_range, range_center + expanded_half_range]
+    if min_lim is not None:
+        new_range[0] = min_lim
+    if max_lim is not None:
+        new_range[1] = max_lim
+    return new_range

@@ -2,7 +2,7 @@ from enum import Enum
 from pathlib import Path
 import h5py
 import pickle
-from utils import qprint
+from utils import qprint, get_shot_list_from_point
 
 
 class Rebuildable:
@@ -42,8 +42,8 @@ class DataTool(Rebuildable):
     SHOT_DATAFIELD = 'shot_datafield'
     POINT_DATAFIELD = 'point_datafield'
     AGGREGATOR = 'aggregator'
-    REPORTER = 'reporter'
     SINGLE_SHOT_REPORTER = 'single_shot_reporter'
+    POINT_REPORTER = 'point_reporter'
 
     def __init__(self, *, name, datatool_type):
         self.name = name
@@ -177,7 +177,7 @@ class DataModel(Rebuildable):
             self.aggregate_data(shot_num)
             self.report_single_shot(shot_num)
             self.last_handled_shot = shot_num
-        self.report(self.last_handled_shot)
+        self.report_point_data()
         self.save_datamodel()
 
     def get_num_shots(self):
@@ -197,9 +197,9 @@ class DataModel(Rebuildable):
         for aggregator in self.get_datatool_of_type(DataTool.AGGREGATOR):
             aggregator.aggregate(shot_num=shot_num)
 
-    def report(self, shot_num):
-        for reporter in self.get_datatool_of_type(DataTool.REPORTER):
-            reporter.report(shot_num=shot_num)
+    def report_point_data(self):
+        for point_reporter in self.get_datatool_of_type(DataTool.POINT_REPORTER):
+            point_reporter.report()
 
     def report_single_shot(self, shot_num):
         for reporter in self.get_datatool_of_type(DataTool.SINGLE_SHOT_REPORTER):
@@ -261,6 +261,14 @@ class DataModel(Rebuildable):
         datafield = self.datatool_dict[datafield_name]
         data = datafield.get_data(data_index)
         return data
+
+    def get_data_by_point(self, datafield_name, point_num):
+        shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, self.last_handled_shot)
+        data_list = []
+        for shot_num in shot_list:
+            data = self.get_data(datafield_name, shot_num)
+            data_list.append(data)
+        return data_list
 
     def set_data(self, datafield_name, data_index, data):
         shot_datafield = self.datatool_dict[datafield_name]
