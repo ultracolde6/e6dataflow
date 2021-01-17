@@ -88,38 +88,3 @@ class ShotImageReporter(ShotReporter):
 
     def generic_plot_adjustments_single(self, data_plot, *, data_min, data_max, **kwargs):
         data_plot.set_clim(vmin=data_min, vmax=data_max)
-
-    # def _report(self, shot_num):
-    #     vmin = np.inf
-    #     vmax = - np.inf
-    #     for datafield_num, datafield_name in enumerate(self.datafield_list):
-    #         ax = self.ax_list[datafield_num]
-    #         ax.clear()
-    #         img = self.datamodel.get_data(datafield_name, shot_num)
-    #         plot = ax.imshow(img)
-    #         try:
-    #             self.plot_list[datafield_num] = plot
-    #         except IndexError:
-    #             self.plot_list.append(plot)
-    #         vmin = min(vmin, img.min())
-    #         vmax = max(vmax, img.max())
-    #         if datafield_name in self.roi_dict:
-    #             roi_list = self.roi_dict[datafield_name]
-    #             for roi in roi_list:
-    #                 horizontal_slice = roi[1]
-    #                 horizontal_span = horizontal_slice.stop - horizontal_slice.start
-    #                 vertical_slice = roi[0]
-    #                 vertical_span = vertical_slice.stop - vertical_slice.start
-    #                 rect = Rectangle((horizontal_slice.start, vertical_slice.start), horizontal_span, vertical_span,
-    #                                  linewidth=1, edgecolor='white', facecolor='none')
-    #                 ax.add_patch(rect)
-    #
-    #     for imshow_object in self.imshow_list:
-    #         imshow_object.set_clim(vmin=vmin, vmax=vmax)
-        # loop_num, point_num = shot_to_loop_and_point(shot_num, num_points=self.datamodel.num_points)
-        # loop_key = f'loop_{loop_num:05d}'
-        # point_key = f'point_{point_num:02d}'
-        # shot_key = f'shot_{shot_num:05d}'
-        # self.fig.suptitle(f'{self.name} - {shot_key} - {point_key} - {loop_key}')
-        # self.fig.canvas.draw()
-        # plt.pause(0.005)
