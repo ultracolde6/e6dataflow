@@ -1,6 +1,7 @@
 import numpy as np
 from pathlib import Path
 from datatool import DataTool
+from utils import shot_to_loop_and_point
 
 
 class Reporter(DataTool):
@@ -39,6 +40,13 @@ def get_layout(num_plots, layout=Reporter.LAYOUT_GRID):
         num_cols = num_plots
     return num_rows, num_cols
 
+
+def get_shot_labels(shot_num, num_points):
+    loop_num, point_num = shot_to_loop_and_point(shot_num, num_points=num_points)
+    loop_key = f'loop_{loop_num:05d}'
+    point_key = f'point_{point_num:02d}'
+    shot_key = f'shot_{shot_num:05d}'
+    return shot_key, loop_key, point_key
 
 
 
