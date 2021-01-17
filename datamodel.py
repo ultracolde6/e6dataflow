@@ -23,7 +23,7 @@ def get_datamodel(*, daily_path, run_name, num_points, run_doc_string, quiet, ov
         datamodel = DataModel(daily_path=daily_path, run_name=run_name, num_points=num_points,
                               run_doc_string=run_doc_string, quiet=quiet)
         return datamodel
-    
+
 
 def load_datamodel(*, daily_path, run_name):
     datamodel = DataModel.load_datamodel(daily_path, run_name)

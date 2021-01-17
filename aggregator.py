@@ -1,4 +1,4 @@
-from datamodel import DataTool, ShotHandler
+from datatool import DataTool, ShotHandler
 from utils import shot_to_loop_and_point, get_shot_list_from_point, list_intersection
 
 

@@ -1,9 +1,6 @@
-import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
 from pathlib import Path
-from datamodel import DataTool, ShotHandler
-from utils import get_shot_list_from_point, shot_to_loop_and_point
+from datatool import DataTool
 
 
 class Reporter(DataTool):
@@ -20,107 +17,11 @@ class Reporter(DataTool):
 
 
 
-class PointReporter(Reporter):
-    def __init__(self, *, name, save_data):
-        super().__init__(name=name, reporter_type=DataTool.POINT_REPORTER, save_data=save_data)
-        self.fig_list = []
-
-    def link_within_datamodel(self):
-        super().link_within_datamodel()
-        for point in range(self.datamodel.num_points):
-            fig = plt.figure()
-            self.fig_list.append(fig)
-            fig.canvas.set_window_title(f'{self.name} - point_{point:02d}')
-
-    def report(self):
-        for point_num in range(self.datamodel.num_points):
-            self.report_point(point_num)
-            if self.save_data:
-                self.save(point_num)
-
-    def report_point(self, point_num):
-        raise NotImplementedError
-
-    def save(self, point_num):
-        point_key = f'point_{point_num:02d}'
-        file_name = f'{self.name} - {point_key}.png'
-        file_path = Path(self.save_path, file_name)
-        self.save_path.mkdir(parents=True, exist_ok=True)
-        self.fig_list[point_num].savefig(file_path)
 
 
-class ShotImageReporter(SingleShotReporter):
-    def __init__(self, *, name, save_data, img_datafield_name_list, roi_dict):
-        super(ShotImageReporter, self).__init__(name=name, save_data=save_data)
-        self.img_datafield_name_list = img_datafield_name_list
-        self.roi_dict = roi_dict
-        self.num_img = len(self.img_datafield_name_list)
-        self.ax_list = []
-        self.imshow_list = []
-        for img_num in range(self.num_img):
-            ax = self.fig.add_subplot(1, self.num_img, img_num + 1)
-            self.ax_list.append(ax)
-            self.imshow_list.append(None)
-        self.fig.set_size_inches(4 * self.num_img, 4)
-
-    def _report(self, shot_num):
-        vmin = np.inf
-        vmax = - np.inf
-        for img_num, datafield_name in enumerate(self.img_datafield_name_list):
-            ax = self.ax_list[img_num]
-            ax.clear()
-            img = self.datamodel.get_data(datafield_name, shot_num)
-            self.imshow_list[img_num] = ax.imshow(img)
-            vmin = min(vmin, img.min())
-            vmax = max(vmax, img.max())
-            if datafield_name in self.roi_dict:
-                roi_list = self.roi_dict[datafield_name]
-                for roi in roi_list:
-                    horizontal_slice = roi[1]
-                    horizontal_span = horizontal_slice.stop - horizontal_slice.start
-                    vertical_slice = roi[0]
-                    vertical_span = vertical_slice.stop - vertical_slice.start
-                    rect = Rectangle((horizontal_slice.start, vertical_slice.start), horizontal_span, vertical_span,
-                                     linewidth=1, edgecolor='white', facecolor='none')
-                    ax.add_patch(rect)
-
-        for imshow_object in self.imshow_list:
-            imshow_object.set_clim(vmin=vmin, vmax=vmax)
-        loop_num, point_num = shot_to_loop_and_point(shot_num, num_points=self.datamodel.num_points)
-        loop_key = f'loop_{loop_num:05d}'
-        point_key = f'point_{point_num:02d}'
-        shot_key = f'shot_{shot_num:05d}'
-        self.fig.suptitle(f'{self.name} - {shot_key} - {point_key} - {loop_key}')
-        self.fig.canvas.draw()
-        plt.pause(0.005)
 
 
-class PlotAllShotReporter(PointReporter):
-    def __init__(self, *, name, save_data, datafield_name_list, ymin=None, ymax=None):
-        super(PlotAllShotReporter, self).__init__(name=name, save_data=save_data)
-        self.datafield_name_list = datafield_name_list
-        self.ymin = ymin
-        self.ymax = ymax
-        self.ax_dict = dict()
 
-    def link_within_datamodel(self):
-        super(PlotAllShotReporter, self).link_within_datamodel()
-        num_datafields = len(self.datafield_name_list)
-        for point_num in range(self.datamodel.num_points):
-            point_key = f'point_{point_num:02d}'
-            self.ax_dict[point_key] = dict()
-            fig = self.fig_list[point_num]
-            for idx, datafield_name in enumerate(self.datafield_name_list):
-                self.ax_dict[point_key][datafield_name] = fig.add_subplot(1, num_datafields, idx+1)
-
-    def report_point(self, point_num):
-        point_key = f'point_{point_num:02d}'
-        fig = self.fig_list[point_num]
-        for datafield_name in self.datafield_name_list:
-            data = self.datamodel.get_data_by_point(datafield_name, point_num)
-            ax = self.ax_dict[point_key][datafield_name]
-            ax.plot(data, '.')
-            fig.canvas.draw()
 
 #
 #
