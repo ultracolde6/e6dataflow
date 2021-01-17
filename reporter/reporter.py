@@ -9,19 +9,33 @@ class Reporter(DataTool):
     LAYOUT_VERTICAL = 'vertical'
     LAYOUT_GRID = 'grid'
 
-    def __init__(self, *, name, reporter_type, datafield_list, layout, save_data):
+    def __init__(self, *, name, reporter_type, datafield_name_list, layout, save_data):
         super(Reporter, self).__init__(name=name, datatool_type=reporter_type)
-        self.datafield_list = datafield_list
+        self.datafield_name_list = datafield_name_list
         self.layout = layout
         self.save_data = save_data
 
-        self.num_datafields = len(self.datafield_list)
+        self.num_datafields = len(self.datafield_name_list)
         self.num_rows, self.num_cols = get_layout(self.num_datafields, layout)
         self.save_path = None
 
     def link_within_datamodel(self):
         super(Reporter, self).link_within_datamodel()
         self.save_path = Path(self.datamodel.daily_path, 'analysis', self.datamodel.run_name, 'reporters', self.name)
+
+
+def get_plot_limits(data_min, data_max, expansion_factor=1.1, min_lim=None, max_lim=None):
+    range_span = data_max - data_min
+    expanded_range = range_span * expansion_factor
+    expanded_half_range = expanded_range / 2
+    range_center = (data_max + data_min) / 2
+    lower = range_center - expanded_half_range
+    upper = range_center + expanded_half_range
+    if min_lim is not None:
+        lower = min_lim
+    if max_lim is not None:
+        upper = max_lim
+    return lower, upper
 
 
 def get_layout(num_plots, layout=Reporter.LAYOUT_GRID):
@@ -47,9 +61,6 @@ def get_shot_labels(shot_num, num_points):
     point_key = f'point_{point_num:02d}'
     shot_key = f'shot_{shot_num:05d}'
     return shot_key, loop_key, point_key
-
-
-
 
 
 
@@ -166,18 +177,3 @@ def get_shot_labels(shot_num, num_points):
 #                 self.fig_list.append(fig)
 #                 self.ax_list.append(ax)
 #         self.initialized = True
-
-
-def expand_range(lims, expansion_factor, min_lim=None, max_lim=None):
-    lower = lims[0]
-    upper = lims[1]
-    range_span = upper - lower
-    expanded_range = range_span * expansion_factor
-    expanded_half_range = expanded_range / 2
-    range_center = (upper + lower) / 2
-    new_range = [range_center - expanded_half_range, range_center + expanded_half_range]
-    if min_lim is not None:
-        new_range[0] = min_lim
-    if max_lim is not None:
-        new_range[1] = max_lim
-    return new_range

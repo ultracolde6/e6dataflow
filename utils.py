@@ -1,5 +1,19 @@
 import numpy as np
 
+
+def get_data_min_max(data):
+    if isinstance(data, list):
+        data_min = min(data)
+        data_max = max(data)
+    elif isinstance(data, np.ndarray):
+        data_min = data.min()
+        data_max = data.max()
+    else:
+        print('Unable to extract data minimum and maximum values.')
+        raise ValueError
+    return data_min, data_max
+
+
 def to_list(var):
     """
     Helper function to convert singleton input parameters into list-expecting parameters into singleton lists.
