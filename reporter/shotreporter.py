@@ -4,7 +4,7 @@ from matplotlib.patches import Rectangle
 from pathlib import Path
 from datatool import ShotHandler, DataTool
 from reporter.reporter import Reporter, get_shot_labels, get_plot_limits
-from utils import shot_to_loop_and_point, get_data_min_max
+from utils import get_data_min_max
 
 
 class ShotReporter(Reporter, ShotHandler):
@@ -14,7 +14,7 @@ class ShotReporter(Reporter, ShotHandler):
                                            save_data=save_data)
         self.min_lim = min_lim
         self.max_lim = max_lim
-        self.fig = plt.figure(self.name, figsize=(4 * self.num_rows, 4 * self.num_cols))
+        self.fig = plt.figure(self.name, figsize=(3 * self.num_cols, 3 * self.num_rows))
         self.ax_list = []
         self.plot_list = []
         for ax_num in range(self.num_datafields):
@@ -30,6 +30,7 @@ class ShotReporter(Reporter, ShotHandler):
             self.save(shot_num)
 
     def _report(self, shot_num):
+        self.fig.set_size_inches(3 * self.num_cols, 3 * self.num_rows)
         data_min = np.inf
         data_max = - np .inf
         for datafield_num, datafield_name in enumerate(self.datafield_name_list):
@@ -49,8 +50,7 @@ class ShotReporter(Reporter, ShotHandler):
         self.generic_plot_adjustments(data_min=data_min, data_max=data_max)
         shot_key, loop_key, point_key = get_shot_labels(shot_num, self.datamodel.num_points)
         self.fig.suptitle(f'{shot_key} - {loop_key} - {point_key}')
-        self.fig.set_tight_layout(True)
-        self.fig.canvas.draw()
+        self.fig.set_tight_layout({'rect': [0, 0.03, 1, 0.95]})
         plt.pause(0.005)
 
     def specific_plot_adjustments(self, ax, new_plot, datafield_name):
@@ -88,3 +88,15 @@ class ShotImageReporter(ShotReporter):
 
     def generic_plot_adjustments_single(self, data_plot, *, data_min, data_max, **kwargs):
         data_plot.set_clim(vmin=data_min, vmax=data_max)
+
+    def specific_plot_adjustments(self, ax, new_plot, datafield_name):
+        if datafield_name in self.roi_dict:
+            roi_list = self.roi_dict[datafield_name]
+            for roi in roi_list:
+                horizontal_slice = roi[1]
+                horizontal_span = horizontal_slice.stop - horizontal_slice.start
+                vertical_slice = roi[0]
+                vertical_span = vertical_slice.stop - vertical_slice.start
+                rect = Rectangle((horizontal_slice.start, vertical_slice.start), horizontal_span, vertical_span,
+                                 linewidth=1, edgecolor='white', facecolor='none')
+                ax.add_patch(rect)
