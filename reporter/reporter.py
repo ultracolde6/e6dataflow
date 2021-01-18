@@ -55,19 +55,8 @@ def get_layout(num_plots, layout=Reporter.LAYOUT_GRID):
     return num_rows, num_cols
 
 
-def get_shot_labels(shot_num, num_points):
-    loop_num, point_num = shot_to_loop_and_point(shot_num, num_points=num_points)
-    loop_key = f'loop_{loop_num:05d}'
-    point_key = f'point_{point_num:02d}'
-    shot_key = f'shot_{shot_num:05d}'
-    return shot_key, loop_key, point_key
 
 
-
-
-#
-#
-#
 # class ShotReporter(PointReporter):
 #     def __init__(self, name, input_datafield_name, single_plot=False, ymin=None, ymax=None,
 #                  ylabel=None, title=None, histogram=False):

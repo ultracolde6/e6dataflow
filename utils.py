@@ -52,6 +52,14 @@ def get_shot_list_from_point(point, num_points, num_shots, start_shot=0, stop_sh
     return shots, num_loops
 
 
+def get_shot_labels(shot_num, num_points):
+    loop_num, point_num = shot_to_loop_and_point(shot_num, num_points=num_points)
+    loop_key = f'loop_{loop_num:05d}'
+    point_key = f'point_{point_num:02d}'
+    shot_key = f'shot_{shot_num:05d}'
+    return shot_key, loop_key, point_key
+
+
 def list_intersection(list_1, list_2):
     result = list(set(list_1) and set(list_2))
     return result

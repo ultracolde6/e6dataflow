@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from pathlib import Path
 from datatool import ShotHandler, DataTool
-from reporter.reporter import Reporter, get_shot_labels, get_plot_limits
-from utils import get_data_min_max
+from reporter.reporter import Reporter, get_plot_limits
+from utils import get_data_min_max, get_shot_labels
 
 
 class ShotReporter(Reporter, ShotHandler):
