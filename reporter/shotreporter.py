@@ -76,9 +76,9 @@ class ShotReporter(Reporter, ShotHandler):
         self.fig.savefig(file_path, bbox_inches='tight')
 
 
-class ShotImageReporter(ShotReporter):
+class ImageShotReporter(ShotReporter):
     def __init__(self, *, name, datafield_name_list, layout, save_data, roi_dict):
-        super(ShotImageReporter, self).__init__(name=name, datafield_name_list=datafield_name_list, layout=layout,
+        super(ImageShotReporter, self).__init__(name=name, datafield_name_list=datafield_name_list, layout=layout,
                                                 save_data=save_data)
         self.roi_dict = roi_dict
 
