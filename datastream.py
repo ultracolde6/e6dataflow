@@ -1,6 +1,6 @@
 from pathlib import Path
 import h5py
-from datatool import DataTool
+from .datatool import DataTool
 
 
 class DataStream(DataTool):

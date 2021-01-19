@@ -2,9 +2,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from pathlib import Path
-from datatool import DataTool
-from reporter.reporter import Reporter, get_plot_limits
-from utils import get_data_min_max
+from ..datatool import DataTool
+from .reporter import Reporter, get_plot_limits
+from ..utils import get_data_min_max
 
 
 class PointReporter(Reporter):

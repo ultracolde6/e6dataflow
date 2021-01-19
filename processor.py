@@ -1,6 +1,6 @@
 import numpy as np
-from datatool import DataTool, ShotHandler
-from utils import shot_to_loop_and_point
+from .datatool import DataTool, ShotHandler
+from .utils import shot_to_loop_and_point
 
 
 class Processor(ShotHandler):

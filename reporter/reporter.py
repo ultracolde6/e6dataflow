@@ -1,6 +1,6 @@
 import numpy as np
 from pathlib import Path
-from datatool import DataTool
+from .datatool import DataTool
 
 
 class Reporter(DataTool):

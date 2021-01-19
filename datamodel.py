@@ -1,8 +1,8 @@
 from enum import Enum
 from pathlib import Path
 import pickle
-from datatool import Rebuildable, DataTool
-from utils import qprint, get_shot_list_from_point
+from .datatool import Rebuildable, DataTool
+from .utils import qprint, get_shot_list_from_point
 
 
 def get_datamodel(*, daily_path, run_name, num_points, run_doc_string, quiet, overwrite_run_doc_string=False):
