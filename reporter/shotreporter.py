@@ -61,10 +61,11 @@ class ShotReporter(Reporter, ShotHandler):
 
     def generic_plot_adjustments(self, *, data_min, data_max, **kwargs):
         plot_min, plot_max = get_plot_limits(data_min, data_max, min_lim=self.min_lim, max_lim=self.max_lim)
-        for data_plot in self.plot_list:
-            self.generic_plot_adjustments_single(data_plot, data_min=plot_min, data_max=plot_max, **kwargs)
+        for axis_num, ax in enumerate(self.ax_list):
+            data_plot = self.plot_list[axis_num]
+            self.generic_plot_adjustments_single(ax, data_plot, data_min=plot_min, data_max=plot_max, **kwargs)
 
-    def generic_plot_adjustments_single(self, data_plot, *, data_min, data_max, **kwargs):
+    def generic_plot_adjustments_single(self, ax, data_plot, *, data_min, data_max, **kwargs):
         raise NotImplementedError
 
     def save(self, shot_num):
@@ -86,7 +87,7 @@ class ImageShotReporter(ShotReporter):
         new_plot = ax.imshow(data)
         return new_plot
 
-    def generic_plot_adjustments_single(self, data_plot, *, data_min, data_max, **kwargs):
+    def generic_plot_adjustments_single(self, ax, data_plot, *, data_min, data_max, **kwargs):
         data_plot.set_clim(vmin=data_min, vmax=data_max)
 
     def specific_plot_adjustments(self, ax, new_plot, datafield_name):
