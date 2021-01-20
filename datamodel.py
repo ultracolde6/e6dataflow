@@ -1,5 +1,6 @@
 from enum import Enum
 from pathlib import Path
+import datetime
 import pickle
 from .datatool import Rebuildable, DataTool
 from .utils import qprint, get_shot_list_from_point, dict_compare, get_shot_labels
@@ -77,14 +78,16 @@ class DataModel(Rebuildable):
             self.run(quiet=quiet, handler_quiet=handler_quiet)
             if self.recently_run:
                 shot_key, loop_key, point_key = get_shot_labels(self.last_handled_shot + 1, self.num_points)
-                print(f'... Waiting for data: {shot_key} - {loop_key} - {point_key} ...')
+                time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                print(f'{time_string} -- .. Waiting for data: {shot_key} - {loop_key} - {point_key} ..')
                 self.recently_run=False
 
     def run(self, quiet=False, handler_quiet=False):
         self.get_num_shots()
         for shot_num in range(self.last_handled_shot + 1, self.num_shots):
             shot_key, loop_key, point_key = get_shot_labels(self.last_handled_shot + 1, self.num_points)
-            qprint(f'** Processing {shot_key} - {loop_key} - {point_key} **', quiet=quiet)
+            time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+            qprint(f'{time_string} -- ** Processing {shot_key} - {loop_key} - {point_key} **', quiet=quiet)
             self.process_data(shot_num, quiet=handler_quiet)
             self.aggregate_data(shot_num, quiet=handler_quiet)
             self.report_single_shot(shot_num, quiet=handler_quiet)
