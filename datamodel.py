@@ -46,7 +46,7 @@ class DataModel(Rebuildable):
         self.quiet = quiet
 
         self.num_shots = 0
-        self.last_handled_shot = 0
+        self.last_handled_shot = -1
         self.datamodel_file_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
 
         self.datatool_dict = dict()
@@ -72,7 +72,7 @@ class DataModel(Rebuildable):
 
     def run(self, quiet=False):
         self.get_num_shots()
-        for shot_num in range(self.last_handled_shot, self.num_shots):
+        for shot_num in range(self.last_handled_shot + 1, self.num_shots):
             qprint(f'** Processing shot_{shot_num:05d} **', quiet=quiet)
             self.process_data(shot_num)
             self.aggregate_data(shot_num)
@@ -114,7 +114,7 @@ class DataModel(Rebuildable):
             self.datatool_dict[datatool_name] = datatool
             datatool.set_datamodel(datamodel=self)
             if not rebuilding:
-                self.last_handled_shot = 0
+                self.last_handled_shot = -1
         elif datatool_exists:
             print(f'WARNING! {datatool_type} "{datatool_name}" already exists in datamodel.')
             old_datatool = self.datatool_dict[datatool_name]
@@ -134,7 +134,7 @@ class DataModel(Rebuildable):
                         child_datatool = self.datatool_dict[child_datatool_name]
                         child_datatool.reset()
                         print(f'{child_datatool.datatool_type}: {child_datatool.name}')
-                    self.last_handled_shot = 0
+                    self.last_handled_shot = -1
                 elif not overwrite:
                     print(f'Using OLD {datatool_type}.')
         if datatool.datatool_type == DataTool.DATASTREAM and self.main_datastream is None:
