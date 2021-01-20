@@ -70,7 +70,7 @@ class DataModel(Rebuildable):
 
     def run(self, quiet=False):
         self.get_num_shots()
-        for shot_num in range(self.last_handled_shot + 1, self.num_shots):
+        for shot_num in range(self.last_handled_shot, self.num_shots):
             qprint(f'** Processing shot_{shot_num:05d} **', quiet=quiet)
             self.process_data(shot_num)
             self.aggregate_data(shot_num)
