@@ -71,10 +71,10 @@ def qprint(string, quiet):
 
 
 def make_centered_roi(vert_center, horiz_center, vert_span, horiz_span):
-    vert_lower = vert_center - vert_span / 2
-    vert_upper = vert_center + vert_span / 2
-    horiz_lower = horiz_center - horiz_span / 2
-    horiz_upper = horiz_center + horiz_span / 2
+    vert_lower = int(vert_center - vert_span / 2)
+    vert_upper = int(vert_center + vert_span / 2)
+    horiz_lower = int(horiz_center - horiz_span / 2)
+    horiz_upper = int(horiz_center + horiz_span / 2)
     vert_slice = slice(vert_lower, vert_upper, 1)
     horiz_slice = slice(horiz_lower, horiz_upper, 1)
     return vert_slice, horiz_slice
