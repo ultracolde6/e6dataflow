@@ -7,7 +7,8 @@ from .utils import qprint, get_shot_list_from_point, dict_compare
 
 def get_datamodel(*, daily_path, run_name, num_points, run_doc_string, quiet, overwrite_run_doc_string=False):
     try:
-        datamodel = DataModel.load_datamodel(daily_path, run_name)
+        datamodel_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
+        datamodel = DataModel.load_datamodel(datamodel_path)
         if num_points != datamodel.num_points:
             raise ValueError(f'Specified num_points ({num_points}) does not match num_points for saved datamodel '
                              f'({num_points}). Changing num_points requires rebuilding the datamodel')
@@ -26,7 +27,8 @@ def get_datamodel(*, daily_path, run_name, num_points, run_doc_string, quiet, ov
 
 
 def load_datamodel(*, daily_path, run_name):
-    datamodel = DataModel.load_datamodel(daily_path, run_name)
+    datamodel_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
+    datamodel = DataModel.load_datamodel(datamodel_path)
     return datamodel
 
 
@@ -159,10 +161,9 @@ class DataModel(Rebuildable):
         shot_datafield.set_data(data_index, data)
 
     @staticmethod
-    def load_datamodel(daily_path, run_name):
-        datamodel_file_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
-        print(f'Loading datamodel from {datamodel_file_path}')
-        rebuild_dict = pickle.load(open(datamodel_file_path, 'rb'))
+    def load_datamodel(datamodel_path):
+        print(f'Loading datamodel from {datamodel_path}')
+        rebuild_dict = pickle.load(open(datamodel_path, 'rb'))
         datamodel = Rebuildable.rebuild(rebuild_dict)
         return datamodel
 
