@@ -2,7 +2,7 @@ from enum import Enum
 from pathlib import Path
 import pickle
 from .datatool import Rebuildable, DataTool
-from .utils import qprint, get_shot_list_from_point
+from .utils import qprint, get_shot_list_from_point, dict_compare
 
 
 def get_datamodel(*, daily_path, run_name, num_points, run_doc_string, quiet, overwrite_run_doc_string=False):
@@ -114,7 +114,7 @@ class DataModel(Rebuildable):
         elif datatool_exists:
             print(f'WARNING! {datatool_type} "{datatool_name}" already exists in datamodel.')
             old_datatool = self.datatool_dict[datatool_name]
-            if datatool.input_param_dict == old_datatool.input_param_dict:
+            if dict_compare(datatool.input_param_dict, old_datatool.input_param_dict):
                 print(f'OLD and NEW {datatool_type} have the same input parameters, using OLD {datatool_type}.')
             else:
                 print(f'OLD and NEW {datatool_type} differ. overwrite set to {overwrite}')

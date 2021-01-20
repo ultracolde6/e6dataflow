@@ -78,3 +78,24 @@ def make_centered_roi(vert_center, horiz_center, vert_span, horiz_span):
     vert_slice = slice(vert_lower, vert_upper, 1)
     horiz_slice = slice(horiz_lower, horiz_upper, 1)
     return vert_slice, horiz_slice
+
+
+def dict_compare(dict_1, dict_2):
+    for key in dict_1.keys():
+        if key not in dict_2:
+            return False
+        else:
+            element_1 = dict_1[key]
+            element_2 = dict_2[key]
+            if isinstance(element_1, dict) and isinstance(element_2, dict):
+                if not dict_compare(dict_1, dict_2):
+                    return False
+            elif isinstance(element_1, np.ndarray) and isinstance(element_2, np.ndarray):
+                if not np.all(element_1 == element_2):
+                    return False
+            elif type(element_1) == type(element_2):
+                if not element_1 == element_2:
+                    return False
+            else:
+                return False
+    return True
