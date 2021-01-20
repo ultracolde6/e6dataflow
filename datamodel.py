@@ -1,6 +1,7 @@
 from enum import Enum
 from pathlib import Path
 import datetime
+import matplotlib.pyplot as plt
 import pickle
 from .datatool import Rebuildable, DataTool
 from .utils import qprint, get_shot_list_from_point, dict_compare, get_shot_labels
@@ -81,6 +82,7 @@ class DataModel(Rebuildable):
                 time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 print(f'{time_string} -- .. Waiting for data: {shot_key} - {loop_key} - {point_key} ..')
                 self.recently_run=False
+            plt.pause(0.01)
 
     def run(self, quiet=False, handler_quiet=False):
         self.get_num_shots()
