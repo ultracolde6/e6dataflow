@@ -111,6 +111,7 @@ class DataModel(Rebuildable):
         if not datatool_exists:
             self.datatool_dict[datatool_name] = datatool
             datatool.set_datamodel(datamodel=self)
+            self.last_handled_shot = 0
         elif datatool_exists:
             print(f'WARNING! {datatool_type} "{datatool_name}" already exists in datamodel.')
             old_datatool = self.datatool_dict[datatool_name]
