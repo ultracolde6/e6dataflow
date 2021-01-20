@@ -7,8 +7,8 @@ class Aggregator(ShotHandler):
         super(Aggregator, self).__init__(name=name, datatool_type=DataTool.AGGREGATOR)
         self.verifier_datafield_names = verifier_datafield_names
 
-    def aggregate(self, shot_num):
-        self.handle(shot_num)
+    def aggregate(self, shot_num, quiet=False):
+        self.handle(shot_num, quiet=quiet)
 
     def _handle(self, shot_num):
         if self.verify_shot(shot_num):

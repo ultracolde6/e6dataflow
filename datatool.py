@@ -1,3 +1,5 @@
+from .utils import qprint
+
 class Rebuildable:
     def __new__(cls, *args, **kwargs):
         input_param_dict = {'args': args, 'kwargs': kwargs, 'class': cls}
@@ -84,13 +86,13 @@ class ShotHandler(DataTool):
         super(ShotHandler, self).reset()
         self.handled_shots = []
 
-    def handle(self, shot_num):
+    def handle(self, shot_num, quiet=False):
         if shot_num not in self.handled_shots:
-            print(f'handling shot {shot_num:05d} with "{self.name}" {self.datatool_type}')
+            qprint(f'handling shot {shot_num:05d} with "{self.name}" {self.datatool_type}', quiet)
             self._handle(shot_num)
             self.handled_shots.append(shot_num)
         else:
-            print(f'skipping shot {shot_num:05d} with "{self.name}" {self.datatool_type}')
+            qprint(f'skipping shot {shot_num:05d} with "{self.name}" {self.datatool_type}', quiet)
 
     def _handle(self, shot_num):
         raise NotImplementedError

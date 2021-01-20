@@ -25,8 +25,8 @@ class ShotReporter(Reporter, ShotHandler):
             ax = self.fig.add_subplot(self.num_rows, self.num_cols, ax_num + 1)
             self.ax_list.append(ax)
 
-    def report(self, shot_num):
-        self.handle(shot_num)
+    def report(self, shot_num, quiet=False):
+        self.handle(shot_num, quiet=quiet)
 
     def _handle(self, shot_num):
         if not self.figs_made:

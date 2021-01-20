@@ -2,7 +2,7 @@ from enum import Enum
 from pathlib import Path
 import pickle
 from .datatool import Rebuildable, DataTool
-from .utils import qprint, get_shot_list_from_point, dict_compare
+from .utils import qprint, get_shot_list_from_point, dict_compare, get_shot_labels
 
 
 def get_datamodel(*, daily_path, run_name, num_points, run_doc_string, quiet, overwrite_run_doc_string=False):
@@ -47,6 +47,7 @@ class DataModel(Rebuildable):
 
         self.num_shots = 0
         self.last_handled_shot = -1
+        self.recently_run = False
         self.datamodel_file_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
 
         self.datatool_dict = dict()
@@ -70,16 +71,27 @@ class DataModel(Rebuildable):
                 datatool_list.append(datatool)
         return datatool_list
 
-    def run(self, quiet=False):
+    def run_continuously(self):
+        print('Begining continuous running of datamodel.')
+        while True:
+            self.run()
+            if self.recently_run:
+                shot_key, loop_key, point_key = get_shot_labels(self.last_handled_shot + 1, self.num_points)
+                print(f'... Waiting for data: {shot_key} - {loop_key} - {point_key} ...')
+                self.recently_run=False
+
+    def run(self, quiet=False, handler_quiet=False):
         self.get_num_shots()
         for shot_num in range(self.last_handled_shot + 1, self.num_shots):
-            qprint(f'** Processing shot_{shot_num:05d} **', quiet=quiet)
-            self.process_data(shot_num)
-            self.aggregate_data(shot_num)
-            self.report_single_shot(shot_num)
+            shot_key, loop_key, point_key = get_shot_labels(self.last_handled_shot + 1, self.num_points)
+            qprint(f'** Processing {shot_key} - {loop_key} - {point_key} **', quiet=quiet)
+            self.process_data(shot_num, quiet=handler_quiet)
+            self.aggregate_data(shot_num, quiet=handler_quiet)
+            self.report_single_shot(shot_num, quiet=handler_quiet)
             self.last_handled_shot = shot_num
         self.report_point_data()
         self.save_datamodel()
+        self.recently_run = True
 
     def get_num_shots(self):
         self.num_shots = self.main_datastream.count_shots()
@@ -90,23 +102,23 @@ class DataModel(Rebuildable):
                                   f'is not equal to num_shots from main datastream '
                                   f'"{self.main_datastream.name}" ({self.num_shots:d})')
 
-    def process_data(self, shot_num):
+    def process_data(self, shot_num, quiet=False):
         for processor in self.get_datatool_of_type(DataTool.PROCESSOR):
-            processor.process(shot_num=shot_num)
+            processor.process(shot_num=shot_num, quiet=quiet)
 
-    def aggregate_data(self, shot_num):
+    def aggregate_data(self, shot_num, quiet=False):
         for aggregator in self.get_datatool_of_type(DataTool.AGGREGATOR):
-            aggregator.aggregate(shot_num=shot_num)
+            aggregator.aggregate(shot_num=shot_num, quiet=quiet)
 
     def report_point_data(self):
         for point_reporter in self.get_datatool_of_type(DataTool.POINT_REPORTER):
             point_reporter.report()
 
-    def report_single_shot(self, shot_num):
+    def report_single_shot(self, shot_num, quiet=False):
         for reporter in self.get_datatool_of_type(DataTool.SINGLE_SHOT_REPORTER):
-            reporter.report(shot_num=shot_num)
+            reporter.report(shot_num=shot_num, quiet=quiet)
 
-    def add_datatool(self, datatool, overwrite=False, rebuilding=False):
+    def add_datatool(self, datatool, overwrite=False, rebuilding=False, quiet=False):
         datatool_name = datatool.name
         datatool_type = datatool.datatool_type
         datatool_exists = datatool_name in self.datatool_dict

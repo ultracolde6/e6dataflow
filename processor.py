@@ -7,8 +7,8 @@ class Processor(ShotHandler):
     def __init__(self, *, name):
         super(Processor, self).__init__(name=name, datatool_type=DataTool.PROCESSOR)
 
-    def process(self, shot_num):
-        self.handle(shot_num)
+    def process(self, shot_num, quiet=False):
+        self.handle(shot_num, quiet=quiet)
 
     def _handle(self, shot_num):
         self._process(shot_num)
