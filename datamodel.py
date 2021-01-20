@@ -106,14 +106,15 @@ class DataModel(Rebuildable):
         for reporter in self.get_datatool_of_type(DataTool.SINGLE_SHOT_REPORTER):
             reporter.report(shot_num=shot_num)
 
-    def add_datatool(self, datatool, overwrite=False):
+    def add_datatool(self, datatool, overwrite=False, rebuilding=False):
         datatool_name = datatool.name
         datatool_type = datatool.datatool_type
         datatool_exists = datatool_name in self.datatool_dict
         if not datatool_exists:
             self.datatool_dict[datatool_name] = datatool
             datatool.set_datamodel(datamodel=self)
-            self.last_handled_shot = 0
+            if not rebuilding:
+                self.last_handled_shot = 0
         elif datatool_exists:
             print(f'WARNING! {datatool_type} "{datatool_name}" already exists in datamodel.')
             old_datatool = self.datatool_dict[datatool_name]
@@ -197,7 +198,7 @@ class DataModel(Rebuildable):
 
         for datatool_rebuild_dict in object_data_dict['datatools'].values():
             datatool = Rebuildable.rebuild(rebuild_dict=datatool_rebuild_dict)
-            self.add_datatool(datatool, overwrite=False)
+            self.add_datatool(datatool, overwrite=False, rebuilding=True)
 
         self.main_datastream = self.datatool_dict[object_data_dict['main_datastream']]
         self.link_datatools()
