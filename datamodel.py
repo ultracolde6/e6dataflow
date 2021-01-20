@@ -71,10 +71,10 @@ class DataModel(Rebuildable):
                 datatool_list.append(datatool)
         return datatool_list
 
-    def run_continuously(self):
+    def run_continuously(self, quiet=False, handler_quiet=False):
         print('Begining continuous running of datamodel.')
         while True:
-            self.run()
+            self.run(quiet=quiet, handler_quiet=handler_quiet)
             if self.recently_run:
                 shot_key, loop_key, point_key = get_shot_labels(self.last_handled_shot + 1, self.num_points)
                 print(f'... Waiting for data: {shot_key} - {loop_key} - {point_key} ...')
