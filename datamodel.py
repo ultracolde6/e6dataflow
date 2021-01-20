@@ -84,8 +84,10 @@ class DataModel(Rebuildable):
                 self.recently_run=False
             plt.pause(0.01)
 
-    def run(self, quiet=False, handler_quiet=False):
+    def run(self, quiet=False, handler_quiet=False, force_run=False):
         self.get_num_shots()
+        if self.last_handled_shot + 1 == self.num_shots and not force_run:
+            return
         for shot_num in range(self.last_handled_shot + 1, self.num_shots):
             shot_key, loop_key, point_key = get_shot_labels(self.last_handled_shot + 1, self.num_points)
             time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
