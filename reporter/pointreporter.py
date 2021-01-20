@@ -31,6 +31,7 @@ class PointReporter(Reporter):
             self.ax_dict[point_key] = ax_list
             plot_list = []
             self.plot_dict[point_key] = plot_list
+        self.figs_made = True
 
     def report(self):
         if not self.figs_made:
