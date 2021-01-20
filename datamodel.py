@@ -128,12 +128,12 @@ class DataModel(Rebuildable):
             if not rebuilding:
                 self.last_handled_shot = -1
         elif datatool_exists:
-            print(f'WARNING! {datatool_type} "{datatool_name}" already exists in datamodel.')
+            qprint(f'WARNING! {datatool_type} "{datatool_name}" already exists in datamodel.', quiet)
             old_datatool = self.datatool_dict[datatool_name]
             if dict_compare(datatool.input_param_dict, old_datatool.input_param_dict):
-                print(f'OLD and NEW {datatool_type} have the same input parameters, using OLD {datatool_type}.')
+                qprint(f'OLD and NEW {datatool_type} have the same input parameters, using OLD {datatool_type}.', quiet)
             else:
-                print(f'OLD and NEW {datatool_type} differ. overwrite set to {overwrite}')
+                qprint(f'OLD and NEW {datatool_type} differ. overwrite set to {overwrite}', quiet)
                 if overwrite:
                     print(f'Using NEW {datatool_type}.')
                     self.datatool_dict[datatool_name] = datatool
@@ -148,7 +148,7 @@ class DataModel(Rebuildable):
                         print(f'{child_datatool.datatool_type}: {child_datatool.name}')
                     self.last_handled_shot = -1
                 elif not overwrite:
-                    print(f'Using OLD {datatool_type}.')
+                    qprint(f'Using OLD {datatool_type}.', quiet)
         if datatool.datatool_type == DataTool.DATASTREAM and self.main_datastream is None:
             self.main_datastream = self.datatool_dict[datatool_name]
 
@@ -210,7 +210,7 @@ class DataModel(Rebuildable):
 
         for datatool_rebuild_dict in object_data_dict['datatools'].values():
             datatool = Rebuildable.rebuild(rebuild_dict=datatool_rebuild_dict)
-            self.add_datatool(datatool, overwrite=False, rebuilding=True)
+            self.add_datatool(datatool, overwrite=False, rebuilding=True, quiet=True)
 
         self.main_datastream = self.datatool_dict[object_data_dict['main_datastream']]
         self.link_datatools()
