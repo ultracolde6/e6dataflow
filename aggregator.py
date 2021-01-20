@@ -1,5 +1,5 @@
 from .datatool import DataTool, ShotHandler
-from .utils import shot_to_loop_and_point, get_shot_list_from_point, list_intersection
+from .utils import shot_to_loop_and_point
 
 
 class Aggregator(ShotHandler):
@@ -25,19 +25,19 @@ class Aggregator(ShotHandler):
         return verified
 
 
-class AverageStdAggregator(Aggregator):
+class AvgStdAggregator(Aggregator):
     def __init__(self, *, name, verifier_datafield_names, input_datafield_name, output_datafield_name):
-        super(AverageStdAggregator, self).__init__(name=name, verifier_datafield_names=verifier_datafield_names)
+        super(AvgStdAggregator, self).__init__(name=name, verifier_datafield_names=verifier_datafield_names)
         self.input_datafield_name = input_datafield_name
         self.output_datafield_name = output_datafield_name
         self.num_aggregated_shots_list = None
 
     def reset(self):
-        super(AverageStdAggregator, self).reset()
+        super(AvgStdAggregator, self).reset()
         self.num_aggregated_shots_list = [0] * self.datamodel.num_points
 
     def link_within_datamodel(self):
-        super(AverageStdAggregator, self).link_within_datamodel()
+        super(AvgStdAggregator, self).link_within_datamodel()
         self.add_child(self.output_datafield_name)
         self.add_parent(self.input_datafield_name)
         if self.num_aggregated_shots_list is None:
@@ -81,9 +81,9 @@ class AverageStdAggregator(Aggregator):
         return new_std
 
     def package_rebuild_dict(self):
-        super(AverageStdAggregator, self).package_rebuild_dict()
+        super(AvgStdAggregator, self).package_rebuild_dict()
         self.object_data_dict['num_aggregated_shots_list'] = self.num_aggregated_shots_list
 
     def rebuild_object_data(self, object_data_dict):
-        super(AverageStdAggregator, self).rebuild_object_data(object_data_dict)
+        super(AvgStdAggregator, self).rebuild_object_data(object_data_dict)
         self.num_aggregated_shots_list = object_data_dict['num_aggregated_shots_list']

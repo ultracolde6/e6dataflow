@@ -1,6 +1,6 @@
 import numpy as np
 from pathlib import Path
-from .datatool import DataTool
+from ..datatool import DataTool
 
 
 class Reporter(DataTool):
@@ -43,11 +43,11 @@ def get_layout(num_plots, layout=Reporter.LAYOUT_GRID):
         num_rows = np.ceil(num_plots / nearest_square)
         num_cols = nearest_square
     elif layout == Reporter.LAYOUT_HORIZONTAL:
-        num_rows = num_plots
-        num_cols = 1
-    elif layout == Reporter.LAYOUT_VERTICAL:
         num_rows = 1
         num_cols = num_plots
+    elif layout == Reporter.LAYOUT_VERTICAL:
+        num_rows = num_plots
+        num_cols = 1
     else:
         num_rows = 1
         num_cols = num_plots
