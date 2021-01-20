@@ -88,7 +88,7 @@ def dict_compare(dict_1, dict_2):
             element_1 = dict_1[key]
             element_2 = dict_2[key]
             if isinstance(element_1, dict) and isinstance(element_2, dict):
-                if not dict_compare(dict_1, dict_2):
+                if not dict_compare(element_1, element_2):
                     return False
             elif isinstance(element_1, np.ndarray) and isinstance(element_2, np.ndarray):
                 if not np.all(element_1 == element_2):
