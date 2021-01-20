@@ -14,9 +14,13 @@ class ShotReporter(Reporter, ShotHandler):
                                            save_data=save_data)
         self.min_lim = min_lim
         self.max_lim = max_lim
-        self.fig = plt.figure(self.name, figsize=(3 * self.num_cols, 3 * self.num_rows))
+        self.fig = None
         self.ax_list = []
         self.plot_list = []
+        self.figs_made = False
+
+    def make_figs(self):
+        self.fig = plt.figure(self.name, figsize=(3 * self.num_cols, 3 * self.num_rows))
         for ax_num in range(self.num_datafields):
             ax = self.fig.add_subplot(self.num_rows, self.num_cols, ax_num + 1)
             self.ax_list.append(ax)
@@ -25,6 +29,8 @@ class ShotReporter(Reporter, ShotHandler):
         self.handle(shot_num)
 
     def _handle(self, shot_num):
+        if not self.figs_made:
+            self.make_figs()
         self._report(shot_num)
         if self.save_data:
             self.save(shot_num)

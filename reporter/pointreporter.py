@@ -17,9 +17,9 @@ class PointReporter(Reporter):
         self.fig_list = []
         self.ax_dict = dict()
         self.plot_dict = dict()
+        self.figs_made = False
 
-    def link_within_datamodel(self):
-        super().link_within_datamodel()
+    def make_figs(self):
         for point_num in range(self.datamodel.num_points):
             point_key = f'point_{point_num:02d}'
             fig = plt.figure(f'{self.name} - {point_key}', figsize=(3 * self.num_cols, 3 * self.num_rows))
@@ -33,6 +33,8 @@ class PointReporter(Reporter):
             self.plot_dict[point_key] = plot_list
 
     def report(self):
+        if not self.figs_made:
+            self.make_figs()
         for point_num in range(self.datamodel.num_points):
             self.report_point(point_num)
             if self.save_data:
