@@ -73,10 +73,10 @@ class DataModel(Rebuildable):
                 datatool_list.append(datatool)
         return datatool_list
 
-    def run_continuously(self, quiet=False, handler_quiet=False):
+    def run_continuously(self, quiet=False, handler_quiet=False, save_every_shot=False):
         print('Begining continuous running of datamodel.')
         while True:
-            self.run(quiet=quiet, handler_quiet=handler_quiet)
+            self.run(quiet=quiet, handler_quiet=handler_quiet, save_every_shot=save_every_shot)
             if self.recently_run:
                 shot_key, loop_key, point_key = get_shot_labels(self.last_handled_shot + 1, self.num_points)
                 time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -84,7 +84,7 @@ class DataModel(Rebuildable):
                 self.recently_run=False
             plt.pause(0.01)
 
-    def run(self, quiet=False, handler_quiet=False, force_run=False):
+    def run(self, quiet=False, handler_quiet=False, force_run=False, save_every_shot=False):
         self.get_num_shots()
         if self.last_handled_shot + 1 == self.num_shots and not force_run:
             return
@@ -96,6 +96,8 @@ class DataModel(Rebuildable):
             self.aggregate_data(shot_num, quiet=handler_quiet)
             self.report_single_shot(shot_num, quiet=handler_quiet)
             self.last_handled_shot = shot_num
+            if save_every_shot:
+                self.save_datamodel()
         self.report_point_data()
         self.save_datamodel()
         self.recently_run = True
