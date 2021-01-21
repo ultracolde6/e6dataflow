@@ -24,6 +24,7 @@ class ShotReporter(Reporter, ShotHandler):
         for ax_num in range(self.num_datafields):
             ax = self.fig.add_subplot(self.num_rows, self.num_cols, ax_num + 1)
             self.ax_list.append(ax)
+        self.figs_made = True
 
     def report(self, shot_num, quiet=False):
         self.handle(shot_num, quiet=quiet)
