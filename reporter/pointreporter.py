@@ -57,6 +57,7 @@ class PointReporter(Reporter):
                 data = self.datamodel.get_data(datafield_name, point_num)
             else:
                 data = self.datamodel.get_data_by_point(datafield_name, point_num)
+                ax.set_xlabel('loop number')
             if isinstance(data, dict):
                 data = data['mean']
             new_plot = self._plot(ax, data)
