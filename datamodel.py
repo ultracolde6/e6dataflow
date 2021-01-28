@@ -158,7 +158,7 @@ class DataModel(Rebuildable):
 
     def link_datatools(self):
         for datatool in self.datatool_dict.values():
-            datatool.link_tree_within_datamodel()
+            datatool.link_within_datamodel()
 
     def get_data(self, datafield_name, data_index):
         datafield = self.datatool_dict[datafield_name]
