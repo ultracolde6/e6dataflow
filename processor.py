@@ -24,8 +24,8 @@ class CountsProcessor(Processor):
         self.result_datafield_name = output_datafield_name
         self.roi_slice = roi_slice
 
-    def link_within_datamodel(self):
-        super(CountsProcessor, self).link_within_datamodel()
+    def link_tree_within_datamodel(self):
+        super(CountsProcessor, self).link_tree_within_datamodel()
         self.add_child(self.result_datafield_name)
         self.add_parent(self.frame_datafield_name)
 
@@ -43,8 +43,8 @@ class MultiCountsProcessor(Processor):
         self.result_datafield_name_list = result_datafield_name_list
         self.roi_slice_array = roi_slice_array
 
-    def link_within_datamodel(self):
-        super(MultiCountsProcessor, self).link_within_datamodel()
+    def link_tree_within_datamodel(self):
+        super(MultiCountsProcessor, self).link_tree_within_datamodel()
         for result_datafield_name in self.result_datafield_name_list:
             self.add_child(result_datafield_name)
         self.add_parent(self.frame_datafield_name)
@@ -66,8 +66,8 @@ class ThresholdProcessor(Processor):
         self.output_datafield_name = output_datafield_name
         self.threshold_value = threshold_value
 
-    def link_within_datamodel(self):
-        super(ThresholdProcessor, self).link_within_datamodel()
+    def link_tree_within_datamodel(self):
+        super(ThresholdProcessor, self).link_tree_within_datamodel()
         self.add_child(self.output_datafield_name)
         self.add_parent(self.input_datafield_name)
 

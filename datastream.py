@@ -11,11 +11,6 @@ class DataStream(DataTool):
         self.file_prefix = file_prefix
         self.data_path = Path(self.daily_path, 'data', run_name, self.name)
 
-    def contains_shot(self, shot_num):
-        file_name = f'{self.file_prefix}_{shot_num:05d}.h5'
-        file_path = Path(self.data_path, file_name)
-        return file_path.exists()
-
     def load_shot(self, shot_num):
         file_name = f'{self.file_prefix}_{shot_num:05d}.h5'
         file_path = Path(self.data_path, file_name)

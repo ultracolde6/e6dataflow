@@ -36,8 +36,8 @@ class AvgStdAggregator(Aggregator):
         super(AvgStdAggregator, self).reset()
         self.num_aggregated_shots_list = [0] * self.datamodel.num_points
 
-    def link_within_datamodel(self):
-        super(AvgStdAggregator, self).link_within_datamodel()
+    def link_tree_within_datamodel(self):
+        super(AvgStdAggregator, self).link_tree_within_datamodel()
         self.add_child(self.output_datafield_name)
         self.add_parent(self.input_datafield_name)
         if self.num_aggregated_shots_list is None:

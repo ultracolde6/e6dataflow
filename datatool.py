@@ -1,5 +1,6 @@
 from .utils import qprint
 
+
 class Rebuildable:
     def __new__(cls, *args, **kwargs):
         input_param_dict = {'args': args, 'kwargs': kwargs, 'class': cls}

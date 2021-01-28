@@ -1,4 +1,3 @@
-from enum import Enum
 from pathlib import Path
 import datetime
 import matplotlib.pyplot as plt
@@ -35,10 +34,6 @@ def load_datamodel(*, daily_path, run_name):
 
 
 class DataModel(Rebuildable):
-    class OverwriteMode(Enum):
-        KEEP_OLD = 0
-        KEEP_NEW = 1
-
     def __init__(self, *, daily_path, run_name, num_points, run_doc_string,
                  quiet):
         self.daily_path = daily_path
@@ -81,7 +76,7 @@ class DataModel(Rebuildable):
                 shot_key, loop_key, point_key = get_shot_labels(self.last_handled_shot + 1, self.num_points)
                 time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 print(f'{time_string} -- .. Waiting for data: {shot_key} - {loop_key} - {point_key} ..')
-                self.recently_run=False
+                self.recently_run = False
             plt.pause(0.01)
 
     def run(self, quiet=False, handler_quiet=False, force_run=False, save_every_shot=False):
@@ -163,7 +158,7 @@ class DataModel(Rebuildable):
 
     def link_datatools(self):
         for datatool in self.datatool_dict.values():
-            datatool.link_within_datamodel()
+            datatool.link_tree_within_datamodel()
 
     def get_data(self, datafield_name, data_index):
         datafield = self.datatool_dict[datafield_name]

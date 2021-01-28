@@ -18,8 +18,8 @@ class Reporter(DataTool):
         self.num_rows, self.num_cols = get_layout(self.num_datafields, layout)
         self.save_path = None
 
-    def link_within_datamodel(self):
-        super(Reporter, self).link_within_datamodel()
+    def link_tree_within_datamodel(self):
+        super(Reporter, self).link_tree_within_datamodel()
         self.save_path = Path(self.datamodel.daily_path, 'analysis', self.datamodel.run_name, 'reporters', self.name)
 
 
