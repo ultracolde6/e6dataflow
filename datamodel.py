@@ -88,7 +88,7 @@ class DataModel(Rebuildable):
     run_continuously(quiet=False, handler_quiet=False, save_every_shot=False)
         Repeatedly run the datamodel so that it processes new data as it comes in without user input.
 
-    run(quiet=False, handler_quiet=False, force_run=False, save_every_shot=False)
+    run(quiet=False, handler_quiet=False, save_every_shot=False)
         Run the datamodel. run processors, then aggregators, then shot reporters then point reports. Save the results
         to the DataModel pickle file.
 
@@ -166,6 +166,9 @@ class DataModel(Rebuildable):
         self.data_dict['point_data'] = dict()
 
     def get_datatool_of_type(self, datatool_type):
+        """ Get all DataTools from datatool_dict matching datatool.datattol_type == datatool_type. Possible
+        datatool_types are enumerated in the DataTool class.
+        """
         datatool_list = []
         for datatool in self.datatool_dict.values():
             if datatool.datatool_type == datatool_type:
@@ -173,24 +176,53 @@ class DataModel(Rebuildable):
         return datatool_list
 
     def run_continuously(self, quiet=False, handler_quiet=False, save_every_shot=False):
+        """ Repeatedly run the DataModel to keep it up to date with new data as it comes in.
+
+        Parameters
+        __________
+        quiet : bool
+            passed through to run(). (default is False)
+        handler_quiet : bool
+            passed through to run(). (default is False)
+        save_every_shot : bool
+            passed through to run(). (default is False)
+        """
         print('Begining continuous running of datamodel.')
         waiting_message_is_current = False
         while True:
             self.get_num_shots()
             old_last_handled_shot = self.last_handled_shot
+            # Check if there is new data and if the waiting message for the next shot has already been printed
             if old_last_handled_shot + 1 == self.num_shots and not waiting_message_is_current:
                 shot_key, loop_key, point_key = get_shot_labels(old_last_handled_shot + 1, self.num_points)
                 time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 print(f'{time_string} -- .. Waiting for data: {shot_key} - {loop_key} - {point_key} ..')
                 waiting_message_is_current = True
             self.run(quiet=quiet, handler_quiet=handler_quiet, save_every_shot=save_every_shot)
+            # If new shots have been handled then the waiting message is primed to be printed again.
             if self.last_handled_shot > old_last_handled_shot:
                 waiting_message_is_current = False
             plt.pause(0.01)
 
-    def run(self, quiet=False, handler_quiet=False, force_run=False, save_every_shot=False):
+    def run(self, quiet=False, handler_quiet=False, save_every_shot=False):
+        """ Run the DataModel to process the raw data through Processors, Aggregators, Reporters.
+
+        parameters
+        __________
+        quiet : bool
+            If False then a message is printed indicating the processing time and shot, loop and point numbers for every
+            shot as it is processed. True suppresses this message. (Default is False)
+        handler_quiet : bool
+            ShotHandlers (such as Processors, Aggregators, and ShotReporters) optionally print a message every time they
+            handle a shot. Setting handler_quiet to False suppresses this message for all ShotHandlers.
+            (Default is False)
+        save_every_shot : bool
+            The DataModel can save itself to the pickle file after it handles every shot if this parameter is set to
+            True. This can be set to False to suppress this behavior and only save after processing all current data.
+            (Default is False)
+        """
         self.get_num_shots()
-        if self.last_handled_shot + 1 == self.num_shots and not force_run:
+        if self.last_handled_shot + 1 == self.num_shots:
             return
         for shot_num in range(self.last_handled_shot + 1, self.num_shots):
             shot_key, loop_key, point_key = get_shot_labels(self.last_handled_shot + 1, self.num_points)
