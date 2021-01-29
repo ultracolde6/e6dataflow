@@ -55,9 +55,7 @@ class DataModel(Rebuildable):
         is called by determining the number of .h5 files in the master DataStream raw data directory.
     last_handled_shot : int
         The number of the last shot which has been processed by the DataModel.
-    recently_run : bool
-        Flag raised after the DataModel is successfully run so to raise a message within the continuous_run loop
-    datamodel_file_path : pathlib.Path
+   datamodel_file_path : pathlib.Path
         Path where the DataModel pickle file will be saved.
     datatool_dict : dict
         dictionary of DataTool within the DataModel. DataTool objects are added to the DataModel via the
@@ -147,11 +145,8 @@ class DataModel(Rebuildable):
         Inherited method from Rebuildable parent class. Use the data which was stored  in the object_data_dict to
         complete the rebuild of the DataModel. The DataTools are recreated using their respective rebuild_dicts and are
         added to the DataModel using add_datatool.
-
-
-
-
     """
+
     def __init__(self, *, name='datamodel', daily_path, run_name, num_points, run_doc_string):
         self.name = name
         self.daily_path = daily_path
@@ -161,7 +156,6 @@ class DataModel(Rebuildable):
 
         self.num_shots = 0
         self.last_handled_shot = -1
-        self.recently_run = False
         self.datamodel_file_path = Path(self.daily_path, self.run_name, f'{self.run_name}-{self.name}.p')
 
         self.datatool_dict = dict()
@@ -180,13 +174,18 @@ class DataModel(Rebuildable):
 
     def run_continuously(self, quiet=False, handler_quiet=False, save_every_shot=False):
         print('Begining continuous running of datamodel.')
+        waiting_message_is_current = False
         while True:
-            self.run(quiet=quiet, handler_quiet=handler_quiet, save_every_shot=save_every_shot)
-            if self.recently_run:
-                shot_key, loop_key, point_key = get_shot_labels(self.last_handled_shot + 1, self.num_points)
+            self.get_num_shots()
+            old_last_handled_shot = self.last_handled_shot
+            if old_last_handled_shot + 1 == self.num_shots and not waiting_message_is_current:
+                shot_key, loop_key, point_key = get_shot_labels(old_last_handled_shot + 1, self.num_points)
                 time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 print(f'{time_string} -- .. Waiting for data: {shot_key} - {loop_key} - {point_key} ..')
-                self.recently_run = False
+                waiting_message_is_current = True
+            self.run(quiet=quiet, handler_quiet=handler_quiet, save_every_shot=save_every_shot)
+            if self.last_handled_shot > old_last_handled_shot:
+                waiting_message_is_current = False
             plt.pause(0.01)
 
     def run(self, quiet=False, handler_quiet=False, force_run=False, save_every_shot=False):
@@ -205,7 +204,6 @@ class DataModel(Rebuildable):
                 self.save_datamodel()
         self.report_point_data()
         self.save_datamodel()
-        self.recently_run = True
 
     def get_num_shots(self):
         self.num_shots = self.main_datastream.count_shots()
