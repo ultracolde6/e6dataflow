@@ -28,7 +28,7 @@ def get_datamodel(*, daily_path, run_name, num_points, run_doc_string, overwrite
 
 
 def load_datamodel(*, daily_path, run_name, datamodel_name='datamodel'):
-    datamodel_path = Path(daily_path, run_name, f'{run_name}-datamodel.p')
+    datamodel_path = Path(daily_path, run_name, f'{run_name}-{datamodel_name}.p')
     datamodel = DataModel.load_datamodel(datamodel_path)
     return datamodel
 
@@ -84,6 +84,72 @@ class DataModel(Rebuildable):
 
     Methods
     _______
+    get_datatool_of_type(datatool_type)
+        Returns all DataTools whose type matches datatool_type. DataTool types are enumerated within the DataTool class.
+
+    run_continuously(quiet=False, handler_quiet=False, save_every_shot=False)
+        Repeatedly run the datamodel so that it processes new data as it comes in without user input.
+
+    run(quiet=False, handler_quiet=False, force_run=False, save_every_shot=False)
+        Run the datamodel. run processors, then aggregators, then shot reporters then point reports. Save the results
+        to the DataModel pickle file.
+
+    get_num_shot():
+        Query the main_datastream for the number of shots.
+
+    process_data(shot_num, quiet=False)
+        run the process method for each Processor within the DataModel on shot_num
+
+    aggregate_data(shot_num, quiet=False):
+        run the aggregate method for each Aggregator within the DataModel on shot_num
+
+    report_single_shot(shot_num, quiet=False):
+        run the report method for each ShotReporter within the DataModel on shot_num
+
+    report_point_data():
+        run the report method for each PointReporter within the DataModel
+
+    add_datatool(datatool, overwrite=False, rebuilding=False, quiet=False):
+        Add datatool to the DataModel. Specifically it is added to the datatool_dict. The method has logic to handle
+        cases when a datatool already exists with the same name as the DataTool being added. If DataTool is overwritten
+        then it and all of its descendents are reset.
+
+    link_datatools():
+        Call the link_within_datamodel method for each DataTool. This should only be called after all DataTools are
+        added to the DataModel. Typically the link_within_datamodel method simply establishes parent-child relationships
+        between DataTools.
+
+    get_data(datafield_name, data_index)
+        wrapper for the get_data method for the DataField corresponding to datafield name. Note that both shot or point
+        data are accessed via this method.
+
+    get_data_by_point(datafield_name, point_num)
+        datafield_name refers to a ShotDataField. This method extracts the data for all shots within point_num and
+        returns it as a list.
+
+    set_data(datafield_name, data_index, data)
+        Write data into DataField at datafield_name at index data_index. Set either shot or point data.
+
+    save_datamodel()
+        The DataModel is a Rebuildable object. This method first prepares the rebuild_dict and then saves the
+        rebuild_dict into a pickle file at datamodel_file_path.
+
+    load_datamodel(datamodel_path)
+        Load the pickle file at datamodel_path and use it to rebuild the DataModel which had been saved.
+
+    package_rebuild_dict()
+        Inherited method from Rebuildable parent class. Put num_shots, last_handled_shot, datamodel_file_path into the
+        object_data_dict. The rebuild_dict for each DataTool is saved into a dictionary called 'datatools' within the
+        DataModel object_data_dict. The name of the main_datastream is saved into the object_data_dict. Finally, the
+        data_dict itself is saved into the object_data_dict.
+
+    rebuild_object_data(object_data_dict)
+        Inherited method from Rebuildable parent class. Use the data which was stored  in the object_data_dict to
+        complete the rebuild of the DataModel. The DataTools are recreated using their respective rebuild_dicts and are
+        added to the DataModel using add_datatool.
+
+
+
 
     """
     def __init__(self, *, name='datamodel', daily_path, run_name, num_points, run_doc_string):
@@ -104,13 +170,6 @@ class DataModel(Rebuildable):
         self.data_dict = dict()
         self.data_dict['shot_data'] = dict()
         self.data_dict['point_data'] = dict()
-
-    def get_datastreams(self):
-        datastream_list = []
-        for datatool in self.datatool_dict.values():
-            if datatool.datatool_type == DataTool.DATASTREAM:
-                datastream_list.append(datatool)
-        return datastream_list
 
     def get_datatool_of_type(self, datatool_type):
         datatool_list = []
@@ -165,13 +224,13 @@ class DataModel(Rebuildable):
         for aggregator in self.get_datatool_of_type(DataTool.AGGREGATOR):
             aggregator.aggregate(shot_num=shot_num, quiet=quiet)
 
-    def report_point_data(self):
-        for point_reporter in self.get_datatool_of_type(DataTool.POINT_REPORTER):
-            point_reporter.report()
-
     def report_single_shot(self, shot_num, quiet=False):
         for reporter in self.get_datatool_of_type(DataTool.SINGLE_SHOT_REPORTER):
             reporter.report(shot_num=shot_num, quiet=quiet)
+
+    def report_point_data(self):
+        for point_reporter in self.get_datatool_of_type(DataTool.POINT_REPORTER):
+            point_reporter.report()
 
     def add_datatool(self, datatool, overwrite=False, rebuilding=False, quiet=False):
         datatool_name = datatool.name
@@ -228,18 +287,18 @@ class DataModel(Rebuildable):
         shot_datafield = self.datatool_dict[datafield_name]
         shot_datafield.set_data(data_index, data)
 
+    def save_datamodel(self):
+        self.package_rebuild_dict()
+        print(f'Saving datamodel to {self.datamodel_file_path}')
+        self.datamodel_file_path.parent.mkdir(parents=True, exist_ok=True)
+        pickle.dump(self.rebuild_dict, open(self.datamodel_file_path, 'wb'))
+
     @staticmethod
     def load_datamodel(datamodel_path):
         print(f'Loading datamodel from {datamodel_path}')
         rebuild_dict = pickle.load(open(datamodel_path, 'rb'))
         datamodel = Rebuildable.rebuild(rebuild_dict)
         return datamodel
-
-    def save_datamodel(self):
-        self.package_rebuild_dict()
-        print(f'Saving datamodel to {self.datamodel_file_path}')
-        self.datamodel_file_path.parent.mkdir(parents=True, exist_ok=True)
-        pickle.dump(self.rebuild_dict, open(self.datamodel_file_path, 'wb'))
 
     def package_rebuild_dict(self):
         super(DataModel, self).package_rebuild_dict()
