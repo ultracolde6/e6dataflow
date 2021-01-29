@@ -32,4 +32,8 @@ Aggregators: Aggregators combine all the data from all shots within a particular
 in a PointDataField. For example, a common aggregation would be to average all of the data over the shots within a
 particular point.
 Reporter: The job of Reporters it to visualize the data stored in the DataFields.
+
+Originally Written: January 2021
+Last Updated: January 2021
+Author: Justin Gerber (justin.gerber48@gmail.com)
 """

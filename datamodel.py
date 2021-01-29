@@ -6,7 +6,7 @@ from .datatool import Rebuildable, DataTool
 from .utils import qprint, get_shot_list_from_point, dict_compare, get_shot_labels
 
 
-def get_datamodel(*, daily_path, run_name, num_points, run_doc_string, quiet, overwrite_run_doc_string=False):
+def get_datamodel(*, daily_path, run_name, num_points, run_doc_string, overwrite_run_doc_string=False):
     try:
         datamodel_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
         datamodel = DataModel.load_datamodel(datamodel_path)
@@ -23,29 +23,80 @@ def get_datamodel(*, daily_path, run_name, num_points, run_doc_string, quiet, ov
         print(e)
         print(f'Creating new datamodel')
         datamodel = DataModel(daily_path=daily_path, run_name=run_name, num_points=num_points,
-                              run_doc_string=run_doc_string, quiet=quiet)
+                              run_doc_string=run_doc_string)
         return datamodel
 
 
-def load_datamodel(*, daily_path, run_name):
-    datamodel_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
+def load_datamodel(*, daily_path, run_name, datamodel_name='datamodel'):
+    datamodel_path = Path(daily_path, run_name, f'{run_name}-datamodel.p')
     datamodel = DataModel.load_datamodel(datamodel_path)
     return datamodel
 
 
 class DataModel(Rebuildable):
-    def __init__(self, *, daily_path, run_name, num_points, run_doc_string,
-                 quiet):
+    """ DataModel orchestrates the flow of the data through the various DataTools contained within.
+
+    Attributes
+    __________
+    name : str
+        The name of the datamodel. Used to support multiple datamodels for a single run. Used in the filename for the
+        saved datamodel pickle file.
+    daily_path : pathlib.Path
+        Analysis for all runs on a given day are saved in a daily folder. This is the path to that folder
+    run_name : str
+        Name of the run. Typically run0, run1, ...
+    num_points : int
+        Number of points in the run
+    run_doc_string : str
+        Human readable string with basic information about the run such as details about the parameters for the
+        different points.
+    num_shots : int
+        Total number of shots recognized by the datamodel. This value is updated every time the datamodel run method
+        is called by determining the number of .h5 files in the master DataStream raw data directory.
+    last_handled_shot : int
+        The number of the last shot which has been processed by the DataModel.
+    recently_run : bool
+        Flag raised after the DataModel is successfully run so to raise a message within the continuous_run loop
+    datamodel_file_path : pathlib.Path
+        Path where the DataModel pickle file will be saved.
+    datatool_dict : dict
+        dictionary of DataTool within the DataModel. DataTool objects are added to the DataModel via the
+        add_datatool method. Keys are the DataTool names and values are the DataTools themselves. If one DataTool
+        must access an attribute of another DataTool within the DataModel it typically does so via that datatool_dict
+        of the DataModel. This means that DataTools cannot communicate until they are both added to the same DataModel.
+    main_datastream : e6dataflow.datastream.DataStream
+        A DataModel may have multiple DataStream objects. It is necessary to specify one of the DataStream objects as
+        the main_datastream. This is the DataStream which will be used to calculated num_shots when the DataModel is
+        run. Typically the num_shots recorded for each DataStream should be always be equivalent, but there is an edge
+        case in which the DataModel is run in the middle of a given shot after some data has been saved but before other
+        data has been saved. For this reason it is best to set the datamodel which is saved last within a shot to be
+        the main_datastream, however, the code may function properly even without this provision.
+    data_dict : dict
+        Nested dictionary containing procesed and aggregated data. Top level keys are 'shot_data' and 'point_data'.
+        ShotDataDictDataFields point to data_dict['shot_data'] which is itself a dictionary and PointDataDictDataFields
+        point to data_dict['point_data']. The dict at data_dict['<shot/point>_data'] contains more dicts named by the
+        corresponding datafield name. These dicts contain data indexed by their shot or point number. For example:
+        data_dict['shot_data'][<datafield_name>]['shot_00035']
+        data_dict['point_data'][<datafield_name>]['point_03']
+        each point to a particular piece of data.
+        The shot_data and point_data dictionaries are initialized as empty and are subsequently formed by the
+        DataField objects after they are added to the DataModel.
+
+    Methods
+    _______
+
+    """
+    def __init__(self, *, name='datamodel', daily_path, run_name, num_points, run_doc_string):
+        self.name = name
         self.daily_path = daily_path
         self.run_name = run_name
         self.num_points = num_points
         self.run_doc_string = run_doc_string
-        self.quiet = quiet
 
         self.num_shots = 0
         self.last_handled_shot = -1
         self.recently_run = False
-        self.datamodel_file_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
+        self.datamodel_file_path = Path(self.daily_path, self.run_name, f'{self.run_name}-{self.name}.p')
 
         self.datatool_dict = dict()
         self.main_datastream = None
@@ -99,7 +150,7 @@ class DataModel(Rebuildable):
 
     def get_num_shots(self):
         self.num_shots = self.main_datastream.count_shots()
-        for datastream in self.get_datastreams():
+        for datastream in self.get_datatool_of_type(DataTool.DATASTREAM):
             alternate_num_shots = datastream.count_shots()
             if alternate_num_shots != self.num_shots:
                 raise UserWarning(f'num_shots from datastream "{datastream.name}" ({alternate_num_shots:d}) '
