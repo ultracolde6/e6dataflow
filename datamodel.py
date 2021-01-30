@@ -55,20 +55,13 @@ class DataModel(Rebuildable):
         is called by determining the number of .h5 files in the master DataStream raw data directory.
     last_handled_shot : int
         The number of the last shot which has been processed by the DataModel.
-   datamodel_file_path : pathlib.Path
+    datamodel_file_path : pathlib.Path
         Path where the DataModel pickle file will be saved.
     datatool_dict : dict
         dictionary of DataTool within the DataModel. DataTool objects are added to the DataModel via the
         add_datatool method. Keys are the DataTool names and values are the DataTools themselves. If one DataTool
         must access an attribute of another DataTool within the DataModel it typically does so via that datatool_dict
         of the DataModel. This means that DataTools cannot communicate until they are both added to the same DataModel.
-    main_datastream : e6dataflow.datastream.DataStream
-        A DataModel may have multiple DataStream objects. It is necessary to specify one of the DataStream objects as
-        the main_datastream. This is the DataStream which will be used to calculated num_shots when the DataModel is
-        run. Typically the num_shots recorded for each DataStream should be always be equivalent, but there is an edge
-        case in which the DataModel is run in the middle of a given shot after some data has been saved but before other
-        data has been saved. For this reason it is best to set the datamodel which is saved last within a shot to be
-        the main_datastream, however, the code may function properly even without this provision.
     data_dict : dict
         Nested dictionary containing procesed and aggregated data. Top level keys are 'shot_data' and 'point_data'.
         ShotDataDictDataFields point to data_dict['shot_data'] which is itself a dictionary and PointDataDictDataFields
@@ -84,69 +77,52 @@ class DataModel(Rebuildable):
     _______
     get_datatool_of_type(datatool_type)
         Returns all DataTools whose type matches datatool_type. DataTool types are enumerated within the DataTool class.
-
     run_continuously(quiet=False, handler_quiet=False, save_every_shot=False)
         Repeatedly run the datamodel so that it processes new data as it comes in without user input.
-
     run(quiet=False, handler_quiet=False, save_every_shot=False)
         Run the datamodel. run processors, then aggregators, then shot reporters then point reports. Save the results
         to the DataModel pickle file.
-
     get_num_shot():
-        Query the main_datastream for the number of shots.
-
+        Query each datastream for its number of saved shots. Set self.num_shots to the minimal value.
     process_data(shot_num, quiet=False)
         run the process method for each Processor within the DataModel on shot_num
-
     aggregate_data(shot_num, quiet=False):
         run the aggregate method for each Aggregator within the DataModel on shot_num
-
     report_single_shot(shot_num, quiet=False):
         run the report method for each ShotReporter within the DataModel on shot_num
-
     report_point_data():
         run the report method for each PointReporter within the DataModel
-
     add_datatool(datatool, overwrite=False, rebuilding=False, quiet=False):
         Add datatool to the DataModel. Specifically it is added to the datatool_dict. The method has logic to handle
         cases when a datatool already exists with the same name as the DataTool being added. If DataTool is overwritten
         then it and all of its descendents are reset.
-
     link_datatools():
         Call the link_within_datamodel method for each DataTool. This should only be called after all DataTools are
         added to the DataModel. Typically the link_within_datamodel method simply establishes parent-child relationships
         between DataTools.
-
     get_data(datafield_name, data_index)
         wrapper for the get_data method for the DataField corresponding to datafield name. Note that both shot or point
         data are accessed via this method.
-
     get_data_by_point(datafield_name, point_num)
         datafield_name refers to a ShotDataField. This method extracts the data for all shots within point_num and
         returns it as a list.
-
     set_data(datafield_name, data_index, data)
         Write data into DataField at datafield_name at index data_index. Set either shot or point data.
-
     save_datamodel()
         The DataModel is a Rebuildable object. This method first prepares the rebuild_dict and then saves the
         rebuild_dict into a pickle file at datamodel_file_path.
-
     load_datamodel(datamodel_path)
         Load the pickle file at datamodel_path and use it to rebuild the DataModel which had been saved.
-
     package_rebuild_dict()
         Inherited method from Rebuildable parent class. Put num_shots, last_handled_shot, datamodel_file_path into the
         object_data_dict. The rebuild_dict for each DataTool is saved into a dictionary called 'datatools' within the
-        DataModel object_data_dict. The name of the main_datastream is saved into the object_data_dict. Finally, the
-        data_dict itself is saved into the object_data_dict.
-
+        DataModel object_data_dict. Finally, the data_dict itself is saved into the object_data_dict.
     rebuild_object_data(object_data_dict)
         Inherited method from Rebuildable parent class. Use the data which was stored  in the object_data_dict to
         complete the rebuild of the DataModel. The DataTools are recreated using their respective rebuild_dicts and are
         added to the DataModel using add_datatool.
     """
-
+    # TODO: Fix main_datastream documentation
     def __init__(self, *, name='datamodel', daily_path, run_name, num_points, run_doc_string):
         self.name = name
         self.daily_path = daily_path
@@ -159,7 +135,6 @@ class DataModel(Rebuildable):
         self.datamodel_file_path = Path(self.daily_path, self.run_name, f'{self.run_name}-{self.name}.p')
 
         self.datatool_dict = dict()
-        self.main_datastream = None
 
         self.data_dict = dict()
         self.data_dict['shot_data'] = dict()
@@ -238,27 +213,30 @@ class DataModel(Rebuildable):
         self.save_datamodel()
 
     def get_num_shots(self):
-        self.num_shots = self.main_datastream.count_shots()
+        """Query each datastream for its number of saved shots. Set self.num_shots to the minimal value."""
+        num_shots_list = []
         for datastream in self.get_datatool_of_type(DataTool.DATASTREAM):
-            alternate_num_shots = datastream.count_shots()
-            if alternate_num_shots != self.num_shots:
-                raise UserWarning(f'num_shots from datastream "{datastream.name}" ({alternate_num_shots:d}) '
-                                  f'is not equal to num_shots from main datastream '
-                                  f'"{self.main_datastream.name}" ({self.num_shots:d})')
+            num_shots = datastream.count_shots()
+            num_shots_list.append(num_shots)
+        self.num_shots = min(num_shots_list)
 
     def process_data(self, shot_num, quiet=False):
+        """ Run each Processor on shot_num. quiet=True suppresses the ShotHandler messages."""
         for processor in self.get_datatool_of_type(DataTool.PROCESSOR):
             processor.process(shot_num=shot_num, quiet=quiet)
 
     def aggregate_data(self, shot_num, quiet=False):
+        """ Run each Aggregator on shot_num. quiet=True suppresses the ShotHandler messages."""
         for aggregator in self.get_datatool_of_type(DataTool.AGGREGATOR):
             aggregator.aggregate(shot_num=shot_num, quiet=quiet)
 
     def report_single_shot(self, shot_num, quiet=False):
+        """ Run each ShotReporter on shot_num. quiet=True suppresses the ShotHandler messages."""
         for reporter in self.get_datatool_of_type(DataTool.SINGLE_SHOT_REPORTER):
             reporter.report(shot_num=shot_num, quiet=quiet)
 
     def report_point_data(self):
+        """ Run each PointReporter on the data"""
         for point_reporter in self.get_datatool_of_type(DataTool.POINT_REPORTER):
             point_reporter.report()
 
@@ -293,8 +271,6 @@ class DataModel(Rebuildable):
                     self.last_handled_shot = -1
                 elif not overwrite:
                     qprint(f'Using OLD {datatool_type}.', quiet)
-        if datatool.datatool_type == DataTool.DATASTREAM and self.main_datastream is None:
-            self.main_datastream = self.datatool_dict[datatool_name]
 
     def link_datatools(self):
         for datatool in self.datatool_dict.values():
@@ -340,7 +316,6 @@ class DataModel(Rebuildable):
         for datatool in self.datatool_dict.values():
             datatool.package_rebuild_dict()
             self.object_data_dict['datatools'][datatool.name] = datatool.rebuild_dict
-        self.object_data_dict['main_datastream'] = self.main_datastream.name
 
         self.object_data_dict['data_dict'] = self.data_dict
 
@@ -356,5 +331,4 @@ class DataModel(Rebuildable):
             datatool = Rebuildable.rebuild(rebuild_dict=datatool_rebuild_dict)
             self.add_datatool(datatool, overwrite=False, rebuilding=True, quiet=True)
 
-        self.main_datastream = self.datatool_dict[object_data_dict['main_datastream']]
         self.link_datatools()
