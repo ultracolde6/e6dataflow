@@ -123,6 +123,7 @@ class DataModel(Rebuildable):
         added to the DataModel using add_datatool.
     """
     # TODO: Fix main_datastream documentation
+    # TODO: Reset documentatoin
     def __init__(self, *, name='datamodel', daily_path, run_name, num_points, run_doc_string):
         self.name = name
         self.daily_path = daily_path
@@ -139,6 +140,8 @@ class DataModel(Rebuildable):
         self.data_dict = dict()
         self.data_dict['shot_data'] = dict()
         self.data_dict['point_data'] = dict()
+
+        self.reset_list = []
 
     def get_datatool_of_type(self, datatool_type):
         """ Get all DataTools from datatool_dict matching datatool.datattol_type == datatool_type. Possible
@@ -241,6 +244,21 @@ class DataModel(Rebuildable):
             point_reporter.report()
 
     def add_datatool(self, datatool, overwrite=False, rebuilding=False, quiet=False):
+        """ Add datatool to the datatool_dict
+
+        parameters
+        __________
+        datatool : e6dataflow.datatool.DataTool
+            DataTool to be added.
+        overwrite : bool
+            If True then, in the even that that the DataModel already contains a DataTool with the same name as
+            datatool, the new datatool will overwrite the old. The new DataTool and all of its
+        :param datatool:
+        :param overwrite:
+        :param rebuilding:
+        :param quiet:
+        :return:
+        """
         datatool_name = datatool.name
         datatool_type = datatool.datatool_type
         datatool_exists = datatool_name in self.datatool_dict
@@ -261,13 +279,13 @@ class DataModel(Rebuildable):
                     self.datatool_dict[datatool_name] = datatool
                     datatool.set_datamodel(datamodel=self)
                     print(f'Re-running the datamodel may result in overwriting datamodel data. ')
-                    print(f'The following datatools are configured into reset mode:')
-                    datatool.reset()
-                    print(f'{datatool.datatool_type}: {datatool.name}')
-                    for child_datatool_name in datatool.get_descendents():
-                        child_datatool = self.datatool_dict[child_datatool_name]
-                        child_datatool.reset()
-                        print(f'{child_datatool.datatool_type}: {child_datatool.name}')
+                    self.reset_list.append(datatool_name)
+                    # datatool.reset()
+                    # print(f'{datatool.datatool_type}: {datatool.name}')
+                    # for child_datatool_name in datatool.get_descendents():
+                    #     child_datatool = self.datatool_dict[child_datatool_name]
+                    #     child_datatool.reset()
+                    #     print(f'{child_datatool.datatool_type}: {child_datatool.name}')
                     self.last_handled_shot = -1
                 elif not overwrite:
                     qprint(f'Using OLD {datatool_type}.', quiet)
@@ -275,7 +293,16 @@ class DataModel(Rebuildable):
     def link_datatools(self):
         for datatool in self.datatool_dict.values():
             datatool.link_within_datamodel()
-
+        if self.reset_list is not []:
+            print('Resetting the following datatools:')
+        for datatool_name in self.reset_list:
+            datatool = self.datatool_dict[datatool_name]
+            datatool.reset()
+            print(f'{datatool.datatool_type}: {datatool.name}')
+            for child_datatool_name in datatool.get_descendents():
+                child_datatool = self.datatool_dict[child_datatool_name]
+                child_datatool.reset()
+                print(f'{child_datatool.datatool_type}: {child_datatool.name}')
     def get_data(self, datafield_name, data_index):
         datafield = self.datatool_dict[datafield_name]
         data = datafield.get_data(data_index)
