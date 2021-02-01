@@ -252,12 +252,13 @@ class DataModel(Rebuildable):
             DataTool to be added.
         overwrite : bool
             If True then, in the even that that the DataModel already contains a DataTool with the same name as
-            datatool, the new datatool will overwrite the old. The new DataTool and all of its
-        :param datatool:
-        :param overwrite:
-        :param rebuilding:
-        :param quiet:
-        :return:
+            datatool, the new datatool will overwrite the old. and will be added to self.reset_list (Default is False)
+        rebuilding : bool
+            If this DataTool is added outside of a rebuild process the last processed set is set to -1 to ensure the
+            new ShotHandler is re-run. If it is added during the rebuild process then the last_handled shot need not be
+            reset. (Default is False)
+        quiet : bool
+            Supresses various warnings and messages if True. (Default is False)
         """
         datatool_name = datatool.name
         datatool_type = datatool.datatool_type
@@ -280,12 +281,6 @@ class DataModel(Rebuildable):
                     datatool.set_datamodel(datamodel=self)
                     print(f'Re-running the datamodel may result in overwriting datamodel data. ')
                     self.reset_list.append(datatool_name)
-                    # datatool.reset()
-                    # print(f'{datatool.datatool_type}: {datatool.name}')
-                    # for child_datatool_name in datatool.get_descendents():
-                    #     child_datatool = self.datatool_dict[child_datatool_name]
-                    #     child_datatool.reset()
-                    #     print(f'{child_datatool.datatool_type}: {child_datatool.name}')
                     self.last_handled_shot = -1
                 elif not overwrite:
                     qprint(f'Using OLD {datatool_type}.', quiet)
@@ -303,6 +298,7 @@ class DataModel(Rebuildable):
                 child_datatool = self.datatool_dict[child_datatool_name]
                 child_datatool.reset()
                 print(f'{child_datatool.datatool_type}: {child_datatool.name}')
+
     def get_data(self, datafield_name, data_index):
         datafield = self.datatool_dict[datafield_name]
         data = datafield.get_data(data_index)
