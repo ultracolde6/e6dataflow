@@ -9,7 +9,6 @@ class Aggregator(ShotHandler):
 
     def aggregate(self, shot_num, quiet=False):
         self.handle(shot_num, quiet=quiet)
-        print('test')
 
     def _handle(self, shot_num):
         if self.verify_shot(shot_num):
