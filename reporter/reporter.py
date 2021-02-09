@@ -20,7 +20,9 @@ class Reporter(DataTool):
 
     def link_within_datamodel(self):
         super(Reporter, self).link_within_datamodel()
-        self.save_path = Path(self.datamodel.daily_path, 'analysis', self.datamodel.run_name, 'reporters', self.name)
+        self.save_path = Path(*self.datamodel.daily_path.parts[-6:-4],'analysis/',\
+                              *self.datamodel.daily_path.parts[-3:], self.datamodel.run_name,'reporters',self.name)
+        # self.save_path = Path(self.datamodel.daily_path, 'analysis', self.datamodel.run_name, 'reporters', self.name)
 
 
 def get_plot_limits(data_min, data_max, expansion_factor=1.1, min_lim=None, max_lim=None):
