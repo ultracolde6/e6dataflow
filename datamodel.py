@@ -28,7 +28,8 @@ def get_datamodel(*, daily_path, run_name, num_points, run_doc_string, overwrite
 
 
 def load_datamodel(*, daily_path, run_name, datamodel_name='datamodel'):
-    datamodel_path = Path(daily_path, run_name, f'{run_name}-{datamodel_name}.p')
+    datamodel_path = Path(*daily_path.parts[-6:-4],'analysis/',*daily_path.parts[-3:], run_name, f'{run_name}-{datamodel_name}.p')
+    # datamodel_path = Path(daily_path, run_name, f'{run_name}-{datamodel_name}.p')
     datamodel = DataModel.load_datamodel(datamodel_path)
     return datamodel
 
@@ -133,7 +134,8 @@ class DataModel(Rebuildable):
 
         self.num_shots = 0
         self.last_handled_shot = -1
-        self.datamodel_file_path = Path(self.daily_path, self.run_name, f'{self.run_name}-{self.name}.p')
+        self.datamodel_file_path = Path(*self.daily_path.parts[-6:-4],'analysis/',*self.daily_path.parts[-3:], self.run_name, f'{self.run_name}-{self.name}.p')
+        # self.datamodel_file_path = Path(self.daily_path, self.run_name, f'{self.run_name}-{self.name}.p')
 
         self.datatool_dict = dict()
 
