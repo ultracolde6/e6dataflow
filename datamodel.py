@@ -291,7 +291,9 @@ class DataModel(Rebuildable):
     def link_datatools(self):
         for datatool in self.datatool_dict.values():
             datatool.link_within_datamodel()
-        if self.reset_list is not []:
+        if not self.reset_list:
+            print('No datatool reset.')
+        if self.reset_list:
             print('Resetting the following datatools:')
         for datatool_name in self.reset_list:
             datatool = self.datatool_dict[datatool_name]
