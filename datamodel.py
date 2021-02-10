@@ -137,7 +137,8 @@ class DataModel(Rebuildable):
 
         self.num_shots = 0
         self.last_handled_shot = -1
-        self.datamodel_file_path = Path(*self.daily_path.parts[-6:-4],'analysis/',*self.daily_path.parts[-3:], self.run_name, f'{self.run_name}-{self.name}.p')
+        self.datamodel_file_path = Path(*self.daily_path.parts[-6:-4],'analysis/',*self.daily_path.parts[-3:], \
+                                        self.run_name, f'{self.run_name}-{self.name}.p')
         # self.datamodel_file_path = Path(self.daily_path, self.run_name, f'{self.run_name}-{self.name}.p')
 
         self.datatool_dict = dict()
@@ -357,6 +358,7 @@ class DataModel(Rebuildable):
         print(f'Loading datamodel from {datamodel_path}')
         rebuild_dict = pickle.load(open(datamodel_path, 'rb'))
         datamodel = Rebuildable.rebuild(rebuild_dict)
+        datamodel.datamodel_file_path = datamodel_path
         return datamodel
 
     def package_rebuild_dict(self):
