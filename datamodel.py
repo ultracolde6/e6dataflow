@@ -333,8 +333,12 @@ class DataModel(Rebuildable):
     #     return data_list
     #  replaced with method below using get_data method (rather than looping on get_datum)
 
-    def get_data_by_point(self, datafield_name, point_num):
-        shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, self.num_shots)
+    def get_data_by_point(self, datafield_name, point_num, shots=None):
+        if not shots:
+            shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, self.num_shots)
+        else:
+            shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, max(shots)+1)
+            shot_list = set(shot_list).intersection(shots)
         data_list = self.get_data(datafield_name,list(shot_list))
         return data_list
 
