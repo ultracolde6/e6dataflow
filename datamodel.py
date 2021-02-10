@@ -331,10 +331,10 @@ class DataModel(Rebuildable):
     #         data = self.get_datum(datafield_name, shot_num)
     #         data_list.append(data)
     #     return data_list
-    #  replaced with method below using get_data method (rather than looping on get_datum) 
+    #  replaced with method below using get_data method (rather than looping on get_datum)
 
     def get_data_by_point(self, datafield_name, point_num):
-        shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, self.last_handled_shot)
+        shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, self.num_shots)
         data_list = self.get_data(datafield_name,list(shot_list))
         return data_list
 
