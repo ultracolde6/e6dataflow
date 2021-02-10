@@ -102,9 +102,11 @@ class DataModel(Rebuildable):
         Call the link_within_datamodel method for each DataTool. This should only be called after all DataTools are
         added to the DataModel. Typically the link_within_datamodel method simply establishes parent-child relationships
         between DataTools.
-    get_data(datafield_name, data_index)
+    get_datum(datafield_name, data_index)
         wrapper for the get_data method for the DataField corresponding to datafield name. Note that both shot or point
         data are accessed via this method.
+    get_data(datafield_name, data_index)
+        generalizes get_datum to select one or more shots. can select all shots by setting data_index='all'
     get_data_by_point(datafield_name, point_num)
         datafield_name refers to a ShotDataField. This method extracts the data for all shots within point_num and
         returns it as a list.
@@ -304,16 +306,29 @@ class DataModel(Rebuildable):
                 child_datatool.reset()
                 print(f'{child_datatool.datatool_type}: {child_datatool.name}')
 
-    def get_data(self, datafield_name, data_index):
+    def get_datum(self, datafield_name, data_index):
         datafield = self.datatool_dict[datafield_name]
         data = datafield.get_data(data_index)
         return data
+
+    def get_data(self, datafield_name, data_index):
+        if isinstance(data_index,int):
+            return self.get_data(datafield_name,data_index)
+        if data_index=='all':
+            shot_list = range(self.num_shots)
+        else:
+            shot_list = data_index
+        data_list = []
+        for shot_num in shot_list:
+            data = self.get_data(datafield_name, shot_num)
+            data_list.append(data)
+        return data_list
 
     def get_data_by_point(self, datafield_name, point_num):
         shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, self.last_handled_shot)
         data_list = []
         for shot_num in shot_list:
-            data = self.get_data(datafield_name, shot_num)
+            data = self.get_datum(datafield_name, shot_num)
             data_list.append(data)
         return data_list
 
