@@ -313,14 +313,14 @@ class DataModel(Rebuildable):
 
     def get_data(self, datafield_name, data_index):
         if isinstance(data_index,int):
-            return self.get_data(datafield_name,data_index)
+            return self.get_datum(datafield_name,data_index)
         if data_index=='all':
             shot_list = range(self.num_shots)
         else:
             shot_list = data_index
         data_list = []
         for shot_num in shot_list:
-            data = self.get_data(datafield_name, shot_num)
+            data = self.get_datum(datafield_name, shot_num)
             data_list.append(data)
         return data_list
 
