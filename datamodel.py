@@ -28,10 +28,8 @@ from .utils import qprint, get_shot_list_from_point, dict_compare, get_shot_labe
 
 
 def load_datamodel(*, datamodel_path, run_name, datamodel_name='datamodel'):
-    datamodel_path_full = Path(datamodel_path, f'{run_name}-{datamodel_name}.p')
-    # datamodel_path = Path(*daily_path.parts[-6:-4],'analysis/',*daily_path.parts[-3:], run_name, f'{run_name}-{datamodel_name}.p')
-    # datamodel_path = Path(daily_path, run_name, f'{run_name}-{datamodel_name}.p')
-    datamodel = DataModel.load_datamodel(datamodel_path_full)
+    datamodel_path = Path(datamodel_path, f'{run_name}-{datamodel_name}.p')
+    datamodel = DataModel.load_datamodel(datamodel_path)
     return datamodel
 
 
@@ -65,7 +63,7 @@ class DataModel(Rebuildable):
         must access an attribute of another DataTool within the DataModel it typically does so via that datatool_dict
         of the DataModel. This means that DataTools cannot communicate until they are both added to the same DataModel.
     data_dict : dict
-        Nested dictionary containing procesed and aggregated data. Top level keys are 'shot_data' and 'point_data'.
+        Nested dictionary containing processed and aggregated data. Top level keys are 'shot_data' and 'point_data'.
         ShotDataDictDataFields point to data_dict['shot_data'] which is itself a dictionary and PointDataDictDataFields
         point to data_dict['point_data']. The dict at data_dict['<shot/point>_data'] contains more dicts named by the
         corresponding datafield name. These dicts contain data indexed by their shot or point number. For example:
@@ -112,9 +110,9 @@ class DataModel(Rebuildable):
         returns it as a list.
     set_data(datafield_name, data_index, data)
         Write data into DataField at datafield_name at index data_index. Set either shot or point data.
-    save_datamodel()
+    save_datamodel(datamodel_path)
         The DataModel is a Rebuildable object. This method first prepares the rebuild_dict and then saves the
-        rebuild_dict into a pickle file at datamodel_file_path.
+        rebuild_dict into a pickle file at datamodel_path (if no datamodel_path, saves in current working directory).
     load_datamodel(datamodel_path)
         Load the pickle file at datamodel_path and use it to rebuild the DataModel which had been saved.
     package_rebuild_dict()
@@ -128,18 +126,14 @@ class DataModel(Rebuildable):
     """
     # TODO: Fix main_datastream documentation
     # TODO: Reset documentatoin
-    def __init__(self, *, name='datamodel', daily_path, run_name, num_points, run_doc_string):
+    def __init__(self, *, name='datamodel', run_name, num_points, run_doc_string):
         self.name = name
-        self.daily_path = daily_path
         self.run_name = run_name
         self.num_points = num_points
         self.run_doc_string = run_doc_string
 
         self.num_shots = 0
         self.last_handled_shot = -1
-        self.datamodel_file_path = Path(*self.daily_path.parts[-6:-4],'analysis/',*self.daily_path.parts[-3:], \
-                                        self.run_name, f'{self.run_name}-{self.name}.p')
-        # self.datamodel_file_path = Path(self.daily_path, self.run_name, f'{self.run_name}-{self.name}.p')
 
         self.datatool_dict = dict()
 
@@ -159,7 +153,7 @@ class DataModel(Rebuildable):
                 datatool_list.append(datatool)
         return datatool_list
 
-    def run_continuously(self, quiet=False, handler_quiet=False, save_every_shot=False):
+    def run_continuously(self, quiet=False, handler_quiet=False, save_every_shot=False, datamodel_path=None):
         """ Repeatedly run the DataModel to keep it up to date with new data as it comes in.
 
         Parameters
@@ -171,7 +165,7 @@ class DataModel(Rebuildable):
         save_every_shot : bool
             passed through to run(). (default is False)
         """
-        print('Begining continuous running of datamodel.')
+        print('Beginning continuous running of datamodel.')
         waiting_message_is_current = False
         while True:
             self.get_num_shots()
@@ -182,13 +176,14 @@ class DataModel(Rebuildable):
                 time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 print(f'{time_string} -- .. Waiting for data: {shot_key} - {loop_key} - {point_key} ..')
                 waiting_message_is_current = True
-            self.run(quiet=quiet, handler_quiet=handler_quiet, save_every_shot=save_every_shot)
+            self.run(quiet=quiet, handler_quiet=handler_quiet, save_every_shot=save_every_shot, \
+                     datamodel_path=datamodel_path)
             # If new shots have been handled then the waiting message is primed to be printed again.
             if self.last_handled_shot > old_last_handled_shot:
                 waiting_message_is_current = False
             plt.pause(0.01)
 
-    def run(self, quiet=False, handler_quiet=False, save_every_shot=False):
+    def run(self, quiet=False, handler_quiet=False, save_every_shot=False, datamodel_path=None):
         """ Run the DataModel to process the raw data through Processors, Aggregators, Reporters.
 
         parameters
@@ -217,9 +212,9 @@ class DataModel(Rebuildable):
             self.report_single_shot(shot_num, quiet=handler_quiet)
             self.last_handled_shot = shot_num
             if save_every_shot:
-                self.save_datamodel()
+                self.save_datamodel(datamodel_path=datamodel_path)
         self.report_point_data()
-        self.save_datamodel()
+        self.save_datamodel(datamodel_path=datamodel_path)
 
     def get_num_shots(self):
         """Query each datastream for its number of saved shots. Set self.num_shots to the minimal value."""
@@ -294,8 +289,6 @@ class DataModel(Rebuildable):
     def link_datatools(self):
         for datatool in self.datatool_dict.values():
             datatool.link_within_datamodel()
-        if not self.reset_list:
-            print('No datatool reset.')
         if self.reset_list:
             print('Resetting the following datatools:')
         for datatool_name in self.reset_list:
@@ -325,15 +318,6 @@ class DataModel(Rebuildable):
             data_list.append(data)
         return data_list
 
-    # def get_data_by_point(self, datafield_name, point_num):
-    #     shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, self.last_handled_shot)
-    #     data_list = []
-    #     for shot_num in shot_list:
-    #         data = self.get_datum(datafield_name, shot_num)
-    #         data_list.append(data)
-    #     return data_list
-    #  replaced with method below using get_data method (rather than looping on get_datum)
-
     def get_data_by_point(self, datafield_name, point_num, shots=None):
         if not shots:
             shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, self.num_shots)
@@ -347,25 +331,25 @@ class DataModel(Rebuildable):
         shot_datafield = self.datatool_dict[datafield_name]
         shot_datafield.set_data(data_index, data)
 
-    def save_datamodel(self):
+    def save_datamodel(self,datamodel_path=None):
         self.package_rebuild_dict()
-        print(f'Saving datamodel to {self.datamodel_file_path}')
-        self.datamodel_file_path.parent.mkdir(parents=True, exist_ok=True)
-        pickle.dump(self.rebuild_dict, open(self.datamodel_file_path, 'wb'))
+        if not datamodel_path:
+            datamodel_path = Path(Path.cwd(), f'{self.run_name}-{self.name}.p')
+        print(f'Saving datamodel to {datamodel_path}')
+        datamodel_path.parent.mkdir(parents=True, exist_ok=True)
+        pickle.dump(self.rebuild_dict, open(datamodel_path, 'wb'))
 
     @staticmethod
     def load_datamodel(datamodel_path):
         print(f'Loading datamodel from {datamodel_path}')
         rebuild_dict = pickle.load(open(datamodel_path, 'rb'))
         datamodel = Rebuildable.rebuild(rebuild_dict)
-        datamodel.datamodel_file_path = datamodel_path
         return datamodel
 
     def package_rebuild_dict(self):
         super(DataModel, self).package_rebuild_dict()
         self.object_data_dict['num_shots'] = self.num_shots
         self.object_data_dict['last_handled_shot'] = self.last_handled_shot
-        self.object_data_dict['datamodel_file_path'] = self.datamodel_file_path
 
         self.object_data_dict['datatools'] = dict()
         for datatool in self.datatool_dict.values():
@@ -378,7 +362,6 @@ class DataModel(Rebuildable):
         super(DataModel, self).rebuild_object_data(object_data_dict)
         self.num_shots = object_data_dict['num_shots']
         self.last_handled_shot = object_data_dict['last_handled_shot']
-        self.datamodel_file_path = object_data_dict['datamodel_file_path']
 
         self.data_dict = object_data_dict['data_dict']
 
