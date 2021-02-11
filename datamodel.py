@@ -9,6 +9,7 @@ from .utils import qprint, get_shot_list_from_point, dict_compare, get_shot_labe
 def get_datamodel(*, datamodel_path, run_name, datamodel_name='datamodel', num_points, \
                   run_doc_string, overwrite_run_doc_string=False):
     try:
+        print('test')
         datamodel_path = Path(datamodel_path, run_name, f'{run_name}-{datamodel_name}.p')
         datamodel = DataModel.load_datamodel(datamodel_path)
         if num_points != datamodel.num_points:
