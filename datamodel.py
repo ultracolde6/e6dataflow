@@ -6,25 +6,26 @@ from .datatool import Rebuildable, DataTool
 from .utils import qprint, get_shot_list_from_point, dict_compare, get_shot_labels
 
 
-# def get_datamodel(*, daily_path, run_name, num_points, run_doc_string, overwrite_run_doc_string=False):
-#     try:
-#         datamodel_path = Path(daily_path, 'analysis', run_name, f'{run_name}-datamodel.p')
-#         datamodel = DataModel.load_datamodel(datamodel_path)
-#         if num_points != datamodel.num_points:
-#             raise ValueError(f'Specified num_points ({num_points}) does not match num_points for saved datamodel '
-#                              f'({num_points}). Changing num_points requires rebuilding the datamodel')
-#         if run_doc_string != datamodel.run_doc_string:
-#             print('Specified run_doc_string does not match saved run_doc_string')
-#             if overwrite_run_doc_string:
-#                 print('Overwriting run_doc_string.')
-#                 datamodel.run_doc_string = run_doc_string
-#         return datamodel
-#     except FileNotFoundError as e:
-#         print(e)
-#         print(f'Creating new datamodel')
-#         datamodel = DataModel(daily_path=daily_path, run_name=run_name, num_points=num_points,
-#                               run_doc_string=run_doc_string)
-#         return datamodel
+def get_datamodel(*, datamodel_path, run_name, datamodel_name='datamodel', num_points, \
+                  run_doc_string, overwrite_run_doc_string=False):
+    try:
+        datamodel_path = Path(datamodel_path, run_name, f'{run_name}-{datamodel_name}.p')
+        datamodel = DataModel.load_datamodel(datamodel_path)
+        if num_points != datamodel.num_points:
+            raise ValueError(f'Specified num_points ({num_points}) does not match num_points for saved datamodel '
+                             f'({datamodel.num_points}). Changing num_points requires rebuilding the datamodel')
+        if run_doc_string != datamodel.run_doc_string:
+            print('Specified run_doc_string does not match saved run_doc_string')
+            if overwrite_run_doc_string:
+                print('Overwriting run_doc_string.')
+                datamodel.run_doc_string = run_doc_string
+        return datamodel
+    except FileNotFoundError as e:
+        print(e)
+        print(f'Creating new datamodel')
+        datamodel = DataModel(run_name=run_name, num_points=num_points,
+                              run_doc_string=run_doc_string)
+        return datamodel
 
 
 def load_datamodel(*, datamodel_path, run_name, datamodel_name='datamodel'):
