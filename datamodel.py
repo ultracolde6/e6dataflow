@@ -335,6 +335,8 @@ class DataModel(Rebuildable):
         self.package_rebuild_dict()
         if not datamodel_path:
             datamodel_path = Path(Path.cwd(), f'{self.run_name}-{self.name}.p')
+        else:
+            datamodel_path = Path(datamodel_path, f'{self.run_name}-{self.name}.p')
         print(f'Saving datamodel to {datamodel_path}')
         datamodel_path.parent.mkdir(parents=True, exist_ok=True)
         pickle.dump(self.rebuild_dict, open(datamodel_path, 'wb'))
