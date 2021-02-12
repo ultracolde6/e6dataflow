@@ -8,10 +8,10 @@ from ..utils import get_data_min_max
 
 
 class PointReporter(Reporter):
-    def __init__(self, *, name, datafield_name_list, layout, save_data, min_lim_list=None, max_lim_list=None):
+    def __init__(self, *, name, datafield_name_list, layout, save_data, close_plots=False, min_lim_list=None, max_lim_list=None):
         super().__init__(name=name, reporter_type=DataTool.POINT_REPORTER,
                          datafield_name_list=datafield_name_list, layout=layout,
-                         save_data=save_data)
+                         save_data=save_data, close_plots=close_plots)
         self.min_lim_list = min_lim_list
         self.max_lim_list = max_lim_list
         self.fig_list = []
@@ -40,7 +40,8 @@ class PointReporter(Reporter):
             self.report_point(point_num)
             if self.save_data:
                 self.save(point_num)
-            plt.close(self.fig_list[point_num])
+            if self.close_plots:
+                plt.close(self.fig_list[point_num])
 
     def report_point(self, point_num):
         point_key = f'point_{point_num:02d}'
@@ -127,9 +128,9 @@ class HistogramPointReporter(PointReporter):
 
 
 class ImagePointReporter(PointReporter):
-    def __init__(self, *, name, datafield_name_list, layout, save_data, roi_dict):
+    def __init__(self, *, name, datafield_name_list, layout, save_data, close_plots, roi_dict):
         super(ImagePointReporter, self).__init__(name=name, datafield_name_list=datafield_name_list, layout=layout,
-                                                 save_data=save_data)
+                                                 save_data=save_data, close_plots=close_plots)
         self.roi_dict = roi_dict
 
     def _plot(self, ax, data):
