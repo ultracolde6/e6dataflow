@@ -40,6 +40,7 @@ class PointReporter(Reporter):
             self.report_point(point_num)
             if self.save_data:
                 self.save(point_num)
+            plt.close(self.fig_list[point_num])
 
     def report_point(self, point_num):
         point_key = f'point_{point_num:02d}'
