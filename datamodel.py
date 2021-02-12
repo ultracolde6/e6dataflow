@@ -6,10 +6,12 @@ from .datatool import Rebuildable, DataTool
 from .utils import qprint, get_shot_list_from_point, dict_compare, get_shot_labels
 
 
-def get_datamodel(*, datamodel_path, run_name, datamodel_name='datamodel', num_points, \
+def get_datamodel(*, datamodel_path=None, run_name, datamodel_name='datamodel', num_points, \
                   run_doc_string, overwrite_run_doc_string=False):
     try:
-        datamodel_path = Path(datamodel_path, run_name, f'{run_name}-{datamodel_name}.p')
+        if not datamodel_path:
+            datamodel_path = Path.cwd()
+        datamodel_path = Path(datamodel_path, f'{run_name}-{datamodel_name}.p')
         datamodel = DataModel.load_datamodel(datamodel_path)
         if num_points != datamodel.num_points:
             raise ValueError(f'Specified num_points ({num_points}) does not match num_points for saved datamodel '
@@ -22,13 +24,15 @@ def get_datamodel(*, datamodel_path, run_name, datamodel_name='datamodel', num_p
         return datamodel
     except FileNotFoundError as e:
         print(e)
-        print(f'Creating new datamodel')
+        print('Creating new datamodel')
         datamodel = DataModel(run_name=run_name, num_points=num_points,
                               run_doc_string=run_doc_string)
         return datamodel
 
 
-def load_datamodel(*, datamodel_path, run_name, datamodel_name='datamodel'):
+def load_datamodel(*, datamodel_path=None, run_name, datamodel_name='datamodel'):
+    if not datamodel_path:
+        datamodel_path=Path.cwd()
     datamodel_path = Path(datamodel_path, f'{run_name}-{datamodel_name}.p')
     datamodel = DataModel.load_datamodel(datamodel_path)
     return datamodel
@@ -202,8 +206,11 @@ class DataModel(Rebuildable):
             (Default is False)
         """
         self.get_num_shots()
-        if self.last_handled_shot + 1 == self.num_shots:
-            return
+
+        if self.num_shots == 0:
+            self.num_shots = self.last_handled_shot+1
+        if self.last_handled_shot + 1 ==  self.num_shots:
+            print('No new data.')
         for shot_num in range(self.last_handled_shot + 1, self.num_shots):
             shot_key, loop_key, point_key = get_shot_labels(self.last_handled_shot + 1, self.num_points)
             time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -290,6 +297,8 @@ class DataModel(Rebuildable):
     def link_datatools(self):
         for datatool in self.datatool_dict.values():
             datatool.link_within_datamodel()
+        if not self.reset_list:
+            print('No datatools reset.')
         if self.reset_list:
             print('Resetting the following datatools:')
         for datatool_name in self.reset_list:

@@ -18,6 +18,7 @@ class DataStream(DataTool):
         return h5_file
 
     def count_shots(self):
+        # print('Looking for data in', self.data_path)
         file_list = list(self.data_path.glob('*.h5'))
         num_shots = len(file_list)
         return num_shots
