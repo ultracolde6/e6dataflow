@@ -260,14 +260,14 @@ class DataModel(Rebuildable):
         datatool : e6dataflow.datatool.DataTool
             DataTool to be added.
         overwrite : bool
-            If True then, in the even that that the DataModel already contains a DataTool with the same name as
+            If True then, in the event that that the DataModel already contains a DataTool with the same name as
             datatool, the new datatool will overwrite the old. and will be added to self.reset_list (Default is False)
         rebuilding : bool
             If this DataTool is added outside of a rebuild process the last processed set is set to -1 to ensure the
             new ShotHandler is re-run. If it is added during the rebuild process then the last_handled shot need not be
             reset. (Default is False)
         quiet : bool
-            Supresses various warnings and messages if True. (Default is False)
+            Suppresses various warnings and messages if True. (Default is False)
         """
         datatool_name = datatool.name
         datatool_type = datatool.datatool_type
@@ -276,7 +276,8 @@ class DataModel(Rebuildable):
             self.datatool_dict[datatool_name] = datatool
             datatool.set_datamodel(datamodel=self)
             if not rebuilding:
-                self.last_handled_shot = -1
+                if datatool_type == 'shot_datafield':
+                    self.last_handled_shot = -1
         elif datatool_exists:
             qprint(f'WARNING! {datatool_type} "{datatool_name}" already exists in datamodel.', quiet)
             old_datatool = self.datatool_dict[datatool_name]
@@ -297,8 +298,6 @@ class DataModel(Rebuildable):
     def link_datatools(self):
         for datatool in self.datatool_dict.values():
             datatool.link_within_datamodel()
-        if not self.reset_list:
-            print('No datatools reset.')
         if self.reset_list:
             print('Resetting the following datatools:')
         for datatool_name in self.reset_list:
