@@ -349,7 +349,7 @@ class DataModel(Rebuildable):
             datamodel_path = Path(datamodel_path, f'{self.run_name}-{self.name}.p')
         print(f'Saving datamodel to {datamodel_path}')
         datamodel_path.parent.mkdir(parents=True, exist_ok=True)
-        pickle.dump(self.rebuild_dict, open(datamodel_path, 'wb'))
+        pickle.dump(self.rebuild_dict, open(datamodel_path, 'wb'),protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
     def load_datamodel(datamodel_path):
