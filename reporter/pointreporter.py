@@ -128,10 +128,10 @@ class HistogramPointReporter(PointReporter):
 
 
 class ImagePointReporter(PointReporter):
-    def __init__(self, *, name, datafield_name_list, layout, save_data, close_plots, roi_dict):
+    def __init__(self, *, name, datafield_name_list, layout, save_data, close_plots, roi_dict, roi_array=None):
         super(ImagePointReporter, self).__init__(name=name, datafield_name_list=datafield_name_list, layout=layout,
                                                  save_data=save_data, close_plots=close_plots)
-        self.roi_dict = roi_dict
+        self.roi_array = roi_array
 
     def _plot(self, ax, data):
         new_plot = ax.imshow(data)
@@ -141,13 +141,12 @@ class ImagePointReporter(PointReporter):
         data_plot.set_clim(vmin=data_min, vmax=data_max)
 
     def specific_plot_adjustments(self, ax, new_plot, datafield_name, point_num):
-        if datafield_name in self.roi_dict:
-            roi_list = self.roi_dict[datafield_name]
-            for roi in roi_list:
-                horizontal_slice = roi[1]
-                horizontal_span = horizontal_slice.stop - horizontal_slice.start
-                vertical_slice = roi[0]
-                vertical_span = vertical_slice.stop - vertical_slice.start
-                rect = Rectangle((horizontal_slice.start, vertical_slice.start), horizontal_span, vertical_span,
-                                 linewidth=1, edgecolor='white', facecolor='none')
-                ax.add_patch(rect)
+        roi_list = roi_array[point_num]
+        for roi in roi_list:
+            horizontal_slice = roi[1]
+            horizontal_span = horizontal_slice.stop - horizontal_slice.start
+            vertical_slice = roi[0]
+            vertical_span = vertical_slice.stop - vertical_slice.start
+            rect = Rectangle((horizontal_slice.start, vertical_slice.start), horizontal_span, vertical_span,
+                             linewidth=1, edgecolor='white', facecolor='none')
+            ax.add_patch(rect)

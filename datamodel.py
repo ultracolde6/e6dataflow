@@ -250,6 +250,7 @@ class DataModel(Rebuildable):
     def report_point_data(self):
         """ Run each PointReporter on the data"""
         for point_reporter in self.get_datatool_of_type(DataTool.POINT_REPORTER):
+            print(point_reporter)
             point_reporter.report()
 
     def add_datatool(self, datatool, overwrite=False, rebuilding=False, quiet=False):
