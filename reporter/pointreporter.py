@@ -128,10 +128,10 @@ class HistogramPointReporter(PointReporter):
 
 
 class ImagePointReporter(PointReporter):
-    def __init__(self, *, name, datafield_name_list, layout, save_data, close_plots, roi_dict, roi_array=None):
+    def __init__(self, *, name, datafield_name_list, layout, save_data, close_plots, roi_slice_array):
         super(ImagePointReporter, self).__init__(name=name, datafield_name_list=datafield_name_list, layout=layout,
                                                  save_data=save_data, close_plots=close_plots)
-        self.roi_array = roi_array
+        self.roi_array = roi_slice_array
 
     def _plot(self, ax, data):
         new_plot = ax.imshow(data)
