@@ -188,7 +188,7 @@ class DataModel(Rebuildable):
                 waiting_message_is_current = False
             plt.pause(0.01)
 
-    def run(self, quiet=False, handler_quiet=False, save_every_shot=False, datamodel_path=None):
+    def run(self, quiet=False, handler_quiet=False, save_every_shot=False, datamodel_path=None, save_reporters=True):
         """ Run the DataModel to process the raw data through Processors, Aggregators, Reporters.
 
         parameters
@@ -224,7 +224,8 @@ class DataModel(Rebuildable):
             if shot_num+1==self.num_shots:
                 self.save_datamodel(datamodel_path=datamodel_path)
         self.report_point_data()
-        self.save_datamodel(datamodel_path=datamodel_path)
+        if save_reporters:
+            self.save_datamodel(datamodel_path=datamodel_path)
 
     def get_num_shots(self):
         """Query each datastream for its number of saved shots. Set self.num_shots to the minimal value."""
