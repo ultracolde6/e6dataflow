@@ -18,6 +18,7 @@ class PointReporter(Reporter):
         self.ax_dict = dict()
         self.plot_dict = dict()
         self.figs_made = False
+        self.fig_made = [False]*self.datamodel.num_points
 
     def make_figs(self):
         for point_num in range(self.datamodel.num_points):
@@ -33,10 +34,25 @@ class PointReporter(Reporter):
             self.plot_dict[point_key] = plot_list
         self.figs_made = True
 
+    def make_fig(self, point_num):
+        point_key = f'point_{point_num:02d}'
+        fig = plt.figure(f'{self.name} - {point_key}', figsize=(3 * self.num_cols, 3 * self.num_rows))
+        self.fig_list.append(fig)
+        ax_list = []
+        for ax_num in range(self.num_datafields):
+            ax = fig.add_subplot(self.num_rows, self.num_cols, ax_num + 1)
+            ax_list.append(ax)
+        self.ax_dict[point_key] = ax_list
+        plot_list = []
+        self.plot_dict[point_key] = plot_list
+        self.fig_made[point_num] = True
+
     def report(self):
-        if not self.figs_made:
-            self.make_figs()
+        # if not self.figs_made:
+        #     self.make_figs()
         for point_num in range(self.datamodel.num_points):
+            if not self.fig_made[point_num]:
+                self.make_fig(point_num)
             self.report_point(point_num)
             if self.save_data:
                 self.save(point_num)
@@ -55,6 +71,8 @@ class PointReporter(Reporter):
             ax = ax_list[datafield_num]
             ax.clear()
             datafield = self.datamodel.datatool_dict[datafield_name]
+            print(datafield.datatool_type)
+            print(datafield_name)
             if datafield.datatool_type == DataTool.POINT_DATAFIELD:
                 data = self.datamodel.get_data(datafield_name, point_num)
             else:
