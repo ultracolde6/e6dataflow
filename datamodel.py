@@ -221,6 +221,8 @@ class DataModel(Rebuildable):
             self.last_handled_shot = shot_num
             if save_every_shot:
                 self.save_datamodel(datamodel_path=datamodel_path)
+            if shot_num+1==self.num_shots:
+                self.save_datamodel(datamodel_path=datamodel_path)
         self.report_point_data()
         self.save_datamodel(datamodel_path=datamodel_path)
 
@@ -250,7 +252,6 @@ class DataModel(Rebuildable):
     def report_point_data(self):
         """ Run each PointReporter on the data"""
         for point_reporter in self.get_datatool_of_type(DataTool.POINT_REPORTER):
-            print(point_reporter)
             point_reporter.report()
 
     def add_datatool(self, datatool, overwrite=False, rebuilding=False, quiet=False):

@@ -141,7 +141,7 @@ class ImagePointReporter(PointReporter):
         data_plot.set_clim(vmin=data_min, vmax=data_max)
 
     def specific_plot_adjustments(self, ax, new_plot, datafield_name, point_num):
-        roi_list = roi_array[point_num]
+        roi_list = self.roi_array[point_num]
         for roi in roi_list:
             horizontal_slice = roi[1]
             horizontal_span = horizontal_slice.stop - horizontal_slice.start
