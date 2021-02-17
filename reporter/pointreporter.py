@@ -18,7 +18,7 @@ class PointReporter(Reporter):
         self.ax_dict = dict()
         self.plot_dict = dict()
         self.figs_made = False
-        self.fig_made = [False]*self.datamodel.num_points
+        self.fig_made = [False]*100
 
     def make_figs(self):
         for point_num in range(self.datamodel.num_points):
@@ -71,8 +71,6 @@ class PointReporter(Reporter):
             ax = ax_list[datafield_num]
             ax.clear()
             datafield = self.datamodel.datatool_dict[datafield_name]
-            print(datafield.datatool_type)
-            print(datafield_name)
             if datafield.datatool_type == DataTool.POINT_DATAFIELD:
                 data = self.datamodel.get_data(datafield_name, point_num)
             else:
