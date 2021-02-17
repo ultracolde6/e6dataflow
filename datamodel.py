@@ -188,7 +188,8 @@ class DataModel(Rebuildable):
                 waiting_message_is_current = False
             plt.pause(0.01)
 
-    def run(self, quiet=False, handler_quiet=False, save_every_shot=False, datamodel_path=None, save_reporters=True):
+    def run(self, quiet=False, handler_quiet=False, save_every_shot=False, datamodel_path=None, save_point_data=True,\
+            save_before_reporting=False):
         """ Run the DataModel to process the raw data through Processors, Aggregators, Reporters.
 
         parameters
@@ -221,10 +222,14 @@ class DataModel(Rebuildable):
             self.last_handled_shot = shot_num
             if save_every_shot:
                 self.save_datamodel(datamodel_path=datamodel_path)
-            if shot_num+1==self.num_shots:
+            if self.last_handled_shot+1==self.num_shots and save_before_reporting:
                 self.save_datamodel(datamodel_path=datamodel_path)
         self.report_point_data()
-        if save_reporters:
+        if save_point_data:
+            self.save_datamodel(datamodel_path=datamodel_path)
+        else:
+            self.data_dict['point_data']={}
+            print('ALERT: Not saving point data.')
             self.save_datamodel(datamodel_path=datamodel_path)
 
     def get_num_shots(self):
