@@ -339,6 +339,7 @@ class DataModel(Rebuildable):
         if not shots:
             shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, self.num_shots)
         else:
+            #test
             shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, max(shots)+1)
             shot_list = sorted(set(shot_list).intersection(shots))
         data_list = self.get_data(datafield_name,list(shot_list))
