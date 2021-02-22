@@ -132,7 +132,7 @@ class DataModel(Rebuildable):
     # TODO: Fix main_datastream documentation
     # TODO: Reset documentatoin
     def __init__(self, *, name='datamodel', run_name, num_points, run_doc_string):
-        # cQED Test 1/5
+
         self.name = name
         self.run_name = run_name
         self.num_points = num_points
@@ -208,9 +208,7 @@ class DataModel(Rebuildable):
             (Default is False)
         """
         self.get_num_shots()
-        #cQED test 2/5
-        # test test
-        # test test
+
         if self.num_shots == 0:
             self.num_shots = self.last_handled_shot+1
         if self.last_handled_shot + 1 ==  self.num_shots:
@@ -345,12 +343,11 @@ class DataModel(Rebuildable):
             shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, max(shots)+1)
             shot_list = sorted(set(shot_list).intersection(shots))
         data_list = self.get_data(datafield_name,list(shot_list))
-        #testtest
         return data_list
 
     def set_data(self, datafield_name, data_index, data):
-        # shot_datafield = self.datatool_dict[datafield_name]
-        # shot_datafield.set_data(data_index, data)
+        shot_datafield = self.datatool_dict[datafield_name]
+        shot_datafield.set_data(data_index, data)
 
     def save_datamodel(self,datamodel_path=None):
         self.package_rebuild_dict()
@@ -361,14 +358,13 @@ class DataModel(Rebuildable):
         print(f'Saving datamodel to {datamodel_path}')
         datamodel_path.parent.mkdir(parents=True, exist_ok=True)
         pickle.dump(self.rebuild_dict, open(datamodel_path, 'wb'),protocol=pickle.HIGHEST_PROTOCOL)
-    #cQED test 3/5
 
-    # @staticmethod
-    # def load_datamodel(datamodel_path):
-    #     print(f'Loading datamodel from {datamodel_path}')
-    #     rebuild_dict = pickle.load(open(datamodel_path, 'rb'))
-    #     datamodel = Rebuildable.rebuild(rebuild_dict)
-    #     return datamodel
+    @staticmethod
+    def load_datamodel(datamodel_path):
+        print(f'Loading datamodel from {datamodel_path}')
+        rebuild_dict = pickle.load(open(datamodel_path, 'rb'))
+        datamodel = Rebuildable.rebuild(rebuild_dict)
+        return datamodel
 
     def package_rebuild_dict(self):
         super(DataModel, self).package_rebuild_dict()
@@ -382,18 +378,15 @@ class DataModel(Rebuildable):
 
         self.object_data_dict['data_dict'] = self.data_dict
 
-    # def rebuild_object_data(self, object_data_dict):
-    #     super(DataModel, self).rebuild_object_data(object_data_dict)
-    #     self.num_shots = object_data_dict['num_shots']
-    #     self.last_handled_shot = object_data_dict['last_handled_shot']
-    #
-    #     self.data_dict = object_data_dict['data_dict']
-    #
-    #     for datatool_rebuild_dict in object_data_dict['datatools'].values():
-    #         datatool = Rebuildable.rebuild(rebuild_dict=datatool_rebuild_dict)
-    #         self.add_datatool(datatool, overwrite=False, rebuilding=True, quiet=True)
-    #
-    #     self.link_datatools()
+    def rebuild_object_data(self, object_data_dict):
+        super(DataModel, self).rebuild_object_data(object_data_dict)
+        self.num_shots = object_data_dict['num_shots']
+        self.last_handled_shot = object_data_dict['last_handled_shot']
 
-    def test4(self):
-        print('test')
+        self.data_dict = object_data_dict['data_dict']
+
+        for datatool_rebuild_dict in object_data_dict['datatools'].values():
+            datatool = Rebuildable.rebuild(rebuild_dict=datatool_rebuild_dict)
+            self.add_datatool(datatool, overwrite=False, rebuilding=True, quiet=True)
+
+        self.link_datatools()
