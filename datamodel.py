@@ -132,6 +132,7 @@ class DataModel(Rebuildable):
     # TODO: Fix main_datastream documentation
     # TODO: Reset documentatoin
     def __init__(self, *, name='datamodel', run_name, num_points, run_doc_string):
+        # cQED Test 1/5
         self.name = name
         self.run_name = run_name
         self.num_points = num_points
@@ -207,7 +208,9 @@ class DataModel(Rebuildable):
             (Default is False)
         """
         self.get_num_shots()
-
+        #cQED test 2/5
+        # test test
+        # test test
         if self.num_shots == 0:
             self.num_shots = self.last_handled_shot+1
         if self.last_handled_shot + 1 ==  self.num_shots:
@@ -339,7 +342,6 @@ class DataModel(Rebuildable):
         if not shots:
             shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, self.num_shots)
         else:
-            #test
             shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, max(shots)+1)
             shot_list = sorted(set(shot_list).intersection(shots))
         data_list = self.get_data(datafield_name,list(shot_list))
@@ -359,6 +361,7 @@ class DataModel(Rebuildable):
         print(f'Saving datamodel to {datamodel_path}')
         datamodel_path.parent.mkdir(parents=True, exist_ok=True)
         pickle.dump(self.rebuild_dict, open(datamodel_path, 'wb'),protocol=pickle.HIGHEST_PROTOCOL)
+    #cQED test 3/5
 
     # @staticmethod
     # def load_datamodel(datamodel_path):
@@ -391,3 +394,6 @@ class DataModel(Rebuildable):
     #         self.add_datatool(datatool, overwrite=False, rebuilding=True, quiet=True)
     #
     #     self.link_datatools()
+
+    def test4(self):
+        print('test')
