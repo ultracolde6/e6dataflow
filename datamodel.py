@@ -347,8 +347,8 @@ class DataModel(Rebuildable):
         return data_list
 
     def set_data(self, datafield_name, data_index, data):
-        shot_datafield = self.datatool_dict[datafield_name]
-        shot_datafield.set_data(data_index, data)
+        # shot_datafield = self.datatool_dict[datafield_name]
+        # shot_datafield.set_data(data_index, data)
 
     def save_datamodel(self,datamodel_path=None):
         self.package_rebuild_dict()
@@ -360,12 +360,12 @@ class DataModel(Rebuildable):
         datamodel_path.parent.mkdir(parents=True, exist_ok=True)
         pickle.dump(self.rebuild_dict, open(datamodel_path, 'wb'),protocol=pickle.HIGHEST_PROTOCOL)
 
-    @staticmethod
-    def load_datamodel(datamodel_path):
-        print(f'Loading datamodel from {datamodel_path}')
-        rebuild_dict = pickle.load(open(datamodel_path, 'rb'))
-        datamodel = Rebuildable.rebuild(rebuild_dict)
-        return datamodel
+    # @staticmethod
+    # def load_datamodel(datamodel_path):
+    #     print(f'Loading datamodel from {datamodel_path}')
+    #     rebuild_dict = pickle.load(open(datamodel_path, 'rb'))
+    #     datamodel = Rebuildable.rebuild(rebuild_dict)
+    #     return datamodel
 
     def package_rebuild_dict(self):
         super(DataModel, self).package_rebuild_dict()
@@ -379,15 +379,15 @@ class DataModel(Rebuildable):
 
         self.object_data_dict['data_dict'] = self.data_dict
 
-    def rebuild_object_data(self, object_data_dict):
-        super(DataModel, self).rebuild_object_data(object_data_dict)
-        self.num_shots = object_data_dict['num_shots']
-        self.last_handled_shot = object_data_dict['last_handled_shot']
-
-        self.data_dict = object_data_dict['data_dict']
-
-        for datatool_rebuild_dict in object_data_dict['datatools'].values():
-            datatool = Rebuildable.rebuild(rebuild_dict=datatool_rebuild_dict)
-            self.add_datatool(datatool, overwrite=False, rebuilding=True, quiet=True)
-
-        self.link_datatools()
+    # def rebuild_object_data(self, object_data_dict):
+    #     super(DataModel, self).rebuild_object_data(object_data_dict)
+    #     self.num_shots = object_data_dict['num_shots']
+    #     self.last_handled_shot = object_data_dict['last_handled_shot']
+    #
+    #     self.data_dict = object_data_dict['data_dict']
+    #
+    #     for datatool_rebuild_dict in object_data_dict['datatools'].values():
+    #         datatool = Rebuildable.rebuild(rebuild_dict=datatool_rebuild_dict)
+    #         self.add_datatool(datatool, overwrite=False, rebuilding=True, quiet=True)
+    #
+    #     self.link_datatools()
