@@ -132,6 +132,7 @@ class DataModel(Rebuildable):
     # TODO: Fix main_datastream documentation
     # TODO: Reset documentatoin
     def __init__(self, *, name='datamodel', run_name, num_points, run_doc_string):
+
         self.name = name
         self.run_name = run_name
         self.num_points = num_points
