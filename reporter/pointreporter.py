@@ -124,7 +124,7 @@ class PointReporter(Reporter):
         file_name = f'{self.name} - {point_key}.png'
         file_path = Path(self.save_path, file_name)
         self.save_path.mkdir(parents=True, exist_ok=True)
-        self.fig_list[point_num].savefig(file_path, bbox_inches='tight')
+        self.fig_list[point_num].savefig(file_path, bbox_inches='tight',dpi=500)
 
 
 class PlotPointReporter(PointReporter):
@@ -164,5 +164,5 @@ class ImagePointReporter(PointReporter):
             vertical_slice = roi[0]
             vertical_span = vertical_slice.stop - vertical_slice.start
             rect = Rectangle((horizontal_slice.start, vertical_slice.start), horizontal_span, vertical_span,
-                             linewidth=1, edgecolor='white', facecolor='none')
+                             linewidth=0.2, edgecolor='white', facecolor='none')
             ax.add_patch(rect)
