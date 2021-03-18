@@ -1,5 +1,6 @@
 import numpy as np
-
+import matplotlib.pyplot as plt
+import e6py.smart_gaussian2d_fit as e6fit
 
 def get_data_min_max(data):
     if isinstance(data, list):
@@ -99,3 +100,52 @@ def dict_compare(dict_1, dict_2):
             else:
                 return False
     return True
+
+
+def ROI_fit(fit_frame_array,roi_guess_array,quiet=True,iterations=1,roi_final_shape=None):
+    num_pts = roi_guess_array.shape[0]
+    num_twz = roi_guess_array.shape[1]
+    result = {}
+    if roi_final_shape == None:
+        roi_final_shape = (roi_guess_array[0,0][0].stop - roi_guess_array[0,0][0].start,
+                           roi_guess_array[0,0][1].stop -roi_guess_array[0,0][1].start)
+
+    for i in range(iterations):
+        result[f'iteration-{i:01d}'] = {}
+        if not quiet:
+            print('iteration ',i)
+        for pt in range(num_pts):
+            frame = fit_frame_array[pt,:,:]
+            res = {}
+            for twz in range(num_twz):
+                roi = roi_guess_array[pt,twz]
+                fit_struct = e6fit.fit_gaussian2d(frame[roi],
+                                                  fix_angle=True,fix_lin_slope=True,show_plot=False)
+                for key in ['val','val_lb','val_ub']:
+                    fit_struct['x0'][key]+=roi[1].start
+                    fit_struct['y0'][key]+=roi[0].start
+                res[f'tweezer-{twz:02d}']=fit_struct
+                centered_roi = make_centered_roi(vert_center=fit_struct['y0']['val'], \
+                                                 horiz_center=fit_struct['x0']['val'], \
+                                                 vert_span=roi[0].stop - roi[0].start, \
+                                                 horiz_span=roi[1].stop - roi[1].start)
+                if i+1 == iterations:
+                    centered_roi = make_centered_roi(vert_center=fit_struct['y0']['val'], \
+                                                     horiz_center=fit_struct['x0']['val'], \
+                                                     vert_span=roi_final_shape[0], \
+                                                     horiz_span=roi_final_shape[1])
+                roi_guess_array[pt,twz]=centered_roi
+            result[f'iteration-{i:01d}'][f'point-{pt:02d}'] = res
+        if not quiet:
+            for twz in range(num_twz):
+                fig = plt.figure()
+                fig.suptitle(f'tweezer-{twz:02d}, iteration-{i:01d}')
+                for pt in range(num_pts):
+                    plt.subplot(10,8,1+2*pt)
+                    plt.imshow(result[f'iteration-{i:01d}'][f'point-{pt:02d}'][f'tweezer-{twz:02d}']['data_img'])
+                    plt.axis('off')
+                    plt.subplot(10,8,2+2*pt)
+                    plt.imshow(result[f'iteration-{i:01d}'][f'point-{pt:02d}'][f'tweezer-{twz:02d}']['model_img'])
+                    plt.axis('off')
+                plt.show()
+    return result, roi_guess_array
