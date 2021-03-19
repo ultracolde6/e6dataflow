@@ -119,8 +119,22 @@ def ROI_fit(fit_frame_array,roi_guess_array,quiet=True,iterations=1,roi_final_sh
             res = {}
             for twz in range(num_twz):
                 roi = roi_guess_array[pt,twz]
-                fit_struct = e6fit.fit_gaussian2d(frame[roi],
-                                                  fix_angle=True,fix_lin_slope=True,show_plot=False)
+                if i == 0:
+                    fit_struct = e6fit.fit_gaussian2d(frame[roi],
+                                                      fix_angle=True,fix_lin_slope=True,show_plot=False)
+                else:
+                    fit_struct = e6fit.fit_gaussian2d(frame[roi],
+                                                      fix_angle=True,fix_lin_slope=True,show_plot=False,
+                                                      guess=[(roi[1].stop - roi[1].start)/2,
+                                                             (roi[0].stop - roi[0].start)/2,
+                                                             result[f'iteration-{(i-1):01d}'][f'point-{pt:02d}'][
+                                                                 f'tweezer-{twz:02d}']['sx']['val'],
+                                                             result[f'iteration-{(i-1):01d}'][f'point-{pt:02d}'][
+                                                                 f'tweezer-{twz:02d}']['sy']['val'],
+                                                             result[f'iteration-{(i-1):01d}'][f'point-{pt:02d}'][
+                                                                 f'tweezer-{twz:02d}']['amp']['val'],
+                                                             result[f'iteration-{(i-1):01d}'][f'point-{pt:02d}'][
+                                                                 f'tweezer-{twz:02d}']['offset']['val']])
                 for key in ['val','val_lb','val_ub']:
                     fit_struct['x0'][key]+=roi[1].start
                     fit_struct['y0'][key]+=roi[0].start
