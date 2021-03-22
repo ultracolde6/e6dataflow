@@ -99,3 +99,14 @@ def dict_compare(dict_1, dict_2):
             else:
                 return False
     return True
+
+def scale_range(range_min, range_max, scale_factor):
+    range_center = (range_max + range_min) / 2
+    range_span = range_max - range_min
+    new_range_span = range_span * scale_factor
+    new_range_min = range_center - new_range_span / 2
+    new_range_max = range_center + new_range_span / 2
+    return new_range_min, new_range_max
+
+def foo():
+    pass

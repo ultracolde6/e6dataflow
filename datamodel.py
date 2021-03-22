@@ -6,7 +6,7 @@ from .datatool import Rebuildable, DataTool
 from .utils import qprint, get_shot_list_from_point, dict_compare, get_shot_labels
 
 
-def get_datamodel(*, datamodel_path=None, run_name, datamodel_name='datamodel', num_points, \
+def get_datamodel(*, datamodel_path=None, run_name, datamodel_name='datamodel', num_points,
                   run_doc_string, overwrite_run_doc_string=False):
     try:
         if not datamodel_path:
@@ -32,7 +32,7 @@ def get_datamodel(*, datamodel_path=None, run_name, datamodel_name='datamodel', 
 
 def load_datamodel(*, datamodel_path=None, run_name, datamodel_name='datamodel'):
     if not datamodel_path:
-        datamodel_path=Path.cwd()
+        datamodel_path = Path.cwd()
     datamodel_path = Path(datamodel_path, f'{run_name}-{datamodel_name}.p')
     datamodel = DataModel.load_datamodel(datamodel_path)
     return datamodel
@@ -182,14 +182,14 @@ class DataModel(Rebuildable):
                 time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                 print(f'{time_string} -- .. Waiting for data: {shot_key} - {loop_key} - {point_key} ..')
                 waiting_message_is_current = True
-            self.run(quiet=quiet, handler_quiet=handler_quiet, save_every_shot=save_every_shot, \
+            self.run(quiet=quiet, handler_quiet=handler_quiet, save_every_shot=save_every_shot,
                      datamodel_path=datamodel_path)
             # If new shots have been handled then the waiting message is primed to be printed again.
             if self.last_handled_shot > old_last_handled_shot:
                 waiting_message_is_current = False
             plt.pause(0.01)
 
-    def run(self, quiet=False, handler_quiet=False, save_every_shot=False, datamodel_path=None, save_point_data=True,\
+    def run(self, quiet=False, handler_quiet=False, save_every_shot=False, datamodel_path=None, save_point_data=True,
             save_before_reporting=False):
         """ Run the DataModel to process the raw data through Processors, Aggregators, Reporters.
 
@@ -211,7 +211,7 @@ class DataModel(Rebuildable):
 
         if self.num_shots == 0:
             self.num_shots = self.last_handled_shot+1
-        if self.last_handled_shot + 1 ==  self.num_shots:
+        if self.last_handled_shot + 1 == self.num_shots:
             print('No new data.')
         for shot_num in range(self.last_handled_shot + 1, self.num_shots):
             shot_key, loop_key, point_key = get_shot_labels(self.last_handled_shot + 1, self.num_points)
@@ -223,13 +223,13 @@ class DataModel(Rebuildable):
             self.last_handled_shot = shot_num
             if save_every_shot:
                 self.save_datamodel(datamodel_path=datamodel_path)
-            if self.last_handled_shot+1==self.num_shots and save_before_reporting:
+            if self.last_handled_shot+1 == self.num_shots and save_before_reporting:
                 self.save_datamodel(datamodel_path=datamodel_path)
         self.report_point_data()
         if save_point_data:
             self.save_datamodel(datamodel_path=datamodel_path)
         else:
-            self.data_dict['point_data']={}
+            self.data_dict['point_data'] = {}
             print('ALERT: Not saving point data.')
             self.save_datamodel(datamodel_path=datamodel_path)
 
@@ -324,9 +324,9 @@ class DataModel(Rebuildable):
         return data
 
     def get_data(self, datafield_name, data_index):
-        if isinstance(data_index,int):
-            return self.get_datum(datafield_name,data_index)
-        if data_index=='all':
+        if isinstance(data_index, int):
+            return self.get_datum(datafield_name, data_index)
+        if data_index == 'all':
             shot_list = range(self.num_shots)
         else:
             shot_list = data_index
@@ -342,14 +342,14 @@ class DataModel(Rebuildable):
         else:
             shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, max(shots)+1)
             shot_list = sorted(set(shot_list).intersection(shots))
-        data_list = self.get_data(datafield_name,list(shot_list))
+        data_list = self.get_data(datafield_name, list(shot_list))
         return data_list
 
     def set_data(self, datafield_name, data_index, data):
         shot_datafield = self.datatool_dict[datafield_name]
         shot_datafield.set_data(data_index, data)
 
-    def save_datamodel(self,datamodel_path=None):
+    def save_datamodel(self, datamodel_path=None):
         self.package_rebuild_dict()
         if not datamodel_path:
             datamodel_path = Path(Path.cwd(), f'{self.run_name}-{self.name}.p')
@@ -357,7 +357,7 @@ class DataModel(Rebuildable):
             datamodel_path = Path(datamodel_path, f'{self.run_name}-{self.name}.p')
         print(f'Saving datamodel to {datamodel_path}')
         datamodel_path.parent.mkdir(parents=True, exist_ok=True)
-        pickle.dump(self.rebuild_dict, open(datamodel_path, 'wb'),protocol=pickle.HIGHEST_PROTOCOL)
+        pickle.dump(self.rebuild_dict, open(datamodel_path, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
 
     @staticmethod
     def load_datamodel(datamodel_path):
