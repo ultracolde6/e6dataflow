@@ -26,10 +26,12 @@ class Aggregator(ShotHandler):
 
 
 class AvgStdAggregator(Aggregator):
-    def __init__(self, *, name, verifier_datafield_names, input_datafield_name, output_datafield_name):
+    def __init__(self, *, name, verifier_datafield_names, input_datafield_name,
+                 output_mean_datafield_name, output_std_datafield_name):
         super(AvgStdAggregator, self).__init__(name=name, verifier_datafield_names=verifier_datafield_names)
         self.input_datafield_name = input_datafield_name
-        self.output_datafield_name = output_datafield_name
+        self.output_mean_datafield_name = output_mean_datafield_name
+        self.output_std_datafield_name = output_std_datafield_name
         self.num_aggregated_shots_list = None
 
     def reset(self):
@@ -38,30 +40,28 @@ class AvgStdAggregator(Aggregator):
 
     def link_within_datamodel(self):
         super(AvgStdAggregator, self).link_within_datamodel()
-        self.add_child(self.output_datafield_name)
+        self.add_child(self.output_mean_datafield_name)
+        self.add_child(self.output_std_datafield_name)
         self.add_parent(self.input_datafield_name)
         if self.num_aggregated_shots_list is None:
             self.num_aggregated_shots_list = [0] * self.datamodel.num_points
 
     def _aggregate(self, shot_num):
         loop_num, point_num = shot_to_loop_and_point(shot_num, self.datamodel.num_points)
-        # point_shot_list, num_loops = get_shot_list_from_point(point_num, self.datamodel.num_points, shot_num)
-        # point_aggregated_shots = list_intersection(point_shot_list, self.aggregated_shots)
         old_n = self.num_aggregated_shots_list[point_num]
         new_n = old_n + 1
         self.num_aggregated_shots_list[point_num] = new_n
         new_data = self.datamodel.get_data(self.input_datafield_name, shot_num)
         try:
-            old_result_dict = self.datamodel.get_data(self.output_datafield_name, point_num)
-            old_mean = old_result_dict['mean']
-            old_std = old_result_dict['std']
+            old_mean = self.datamodel.get_data(self.output_mean_datafield_name, point_num)
+            old_std = self.datamodel.get_data(self.output_std_datafield_name, point_num)
             new_mean = self.calculate_new_mean(old_mean, old_n, new_data)
             new_std = self.calculate_new_std(old_mean, old_std, old_n, new_data)
-        except KeyError:
+        except (KeyError, ValueError):
             new_mean = new_data
-            new_std = 0
-        result_dict = {'mean': new_mean, 'std': new_std}
-        self.datamodel.set_data(self.output_datafield_name, point_num, result_dict)
+            new_std = 0 * new_data
+        self.datamodel.set_data(self.output_mean_datafield_name, point_num, new_mean)
+        self.datamodel.set_data(self.output_std_datafield_name, point_num, new_std)
 
     @staticmethod
     def calculate_new_mean(old_mean, old_n, new_data):

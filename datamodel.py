@@ -2,6 +2,7 @@ from pathlib import Path
 import datetime
 import matplotlib.pyplot as plt
 import pickle
+import h5py
 from .datatool import Rebuildable, DataTool
 from .utils import qprint, get_shot_list_from_point, dict_compare, get_shot_labels
 
@@ -150,6 +151,11 @@ class DataModel(Rebuildable):
         self.data_dict = dict()
         self.data_dict['shot_data'] = dict()
         self.data_dict['point_data'] = dict()
+
+        data_h5_path = Path(self.datamodel_dir, f'{self.run_name}-{self.name}.h5')
+        self.data_h5 = h5py.File(data_h5_path, 'w')
+        self.data_h5.create_group('shot_data')
+        self.data_h5.create_group('point_data')
 
         self.reset_list = []
 
