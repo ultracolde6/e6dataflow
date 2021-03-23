@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+from .tools.smart_gaussian2d_fit import fit_gaussian2d
 
 
 def get_data_min_max(data):
@@ -60,6 +62,20 @@ def get_shot_labels(shot_num, num_points):
     return shot_key, loop_key, point_key
 
 
+def outer_inner_to_point(outer_num, inner_num, num_outer, num_inner):
+    if inner_num >= num_inner:
+        raise ValueError('inner_num cannot exceed num_inner')
+    if outer_num >= num_outer:
+        raise ValueError('outer_num cannot exceed num_outer')
+    return outer_num * num_inner + inner_num
+
+
+def point_to_outer_and_inner(point, num_inner):
+    outer_num = point // num_inner
+    inner_num = point % num_inner
+    return outer_num, inner_num
+
+
 def list_intersection(list_1, list_2):
     result = list(set(list_1) and set(list_2))
     return result
@@ -100,6 +116,7 @@ def dict_compare(dict_1, dict_2):
                 return False
     return True
 
+
 def scale_range(range_min, range_max, scale_factor):
     range_center = (range_max + range_min) / 2
     range_span = range_max - range_min
@@ -108,33 +125,34 @@ def scale_range(range_min, range_max, scale_factor):
     new_range_max = range_center + new_range_span / 2
     return new_range_min, new_range_max
 
-def ROI_fit(fit_frame_array,roi_guess_array,quiet=True,iterations=1,roi_final_shape=None):
+
+def ROI_fit(fit_frame_array, roi_guess_array, quiet=True, iterations=1, roi_final_shape=None):
     num_pts = roi_guess_array.shape[0]
     num_twz = roi_guess_array.shape[1]
     result = {}
-    if roi_final_shape == None:
-        roi_final_shape = (roi_guess_array[0,0][0].stop - roi_guess_array[0,0][0].start,
-                           roi_guess_array[0,0][1].stop -roi_guess_array[0,0][1].start)
+    if roi_final_shape is None:
+        roi_final_shape = (roi_guess_array[0, 0][0].stop - roi_guess_array[0, 0][0].start,
+                           roi_guess_array[0, 0][1].stop - roi_guess_array[0, 0][1].start)
 
     for i in range(iterations):
         result[f'iteration-{i:01d}'] = {}
         if not quiet:
-            print('iteration ',i)
+            print('iteration ', i)
         for pt in range(num_pts):
-            frame = fit_frame_array[pt,:,:]
+            frame = fit_frame_array[pt, :, :]
             res = {}
             for twz in range(num_twz):
-                roi = roi_guess_array[pt,twz]
+                roi = roi_guess_array[pt, twz]
                 if i == 0:
-                    fit_struct = e6fit.fit_gaussian2d(frame[roi],
-                                                      fix_angle=True,fix_lin_slope=True,show_plot=False)
+                    fit_struct = fit_gaussian2d(frame[roi],
+                                                fix_angle=True, fix_lin_slope=True, show_plot=False)
                 else:
-                    fit_struct = e6fit.fit_gaussian2d(frame[roi],
-                                                      fix_angle=True,fix_lin_slope=True,show_plot=False,
-                                                      guess=[(roi[1].stop - roi[1].start)/2,
-                                                             (roi[0].stop - roi[0].start)/2,
-                                                             result[f'iteration-{(i-1):01d}'][f'point-{pt:02d}'][
-                                                                 f'tweezer-{twz:02d}']['sx']['val'],
+                    fit_struct = fit_gaussian2d(frame[roi],
+                                                fix_angle=True, fix_lin_slope=True, show_plot=False,
+                                                guess=[(roi[1].stop - roi[1].start)/2,
+                                                       (roi[0].stop - roi[0].start)/2,
+                                                       result[f'iteration-{(i-1):01d}'][f'point-{pt:02d}'][
+                                                                    f'tweezer-{twz:02d}']['sx']['val'],
                                                              result[f'iteration-{(i-1):01d}'][f'point-{pt:02d}'][
                                                                  f'tweezer-{twz:02d}']['sy']['val'],
                                                              result[f'iteration-{(i-1):01d}'][f'point-{pt:02d}'][
@@ -145,16 +163,16 @@ def ROI_fit(fit_frame_array,roi_guess_array,quiet=True,iterations=1,roi_final_sh
                     fit_struct['x0'][key]+=roi[1].start
                     fit_struct['y0'][key]+=roi[0].start
                 res[f'tweezer-{twz:02d}']=fit_struct
-                centered_roi = make_centered_roi(vert_center=fit_struct['y0']['val'], \
-                                                 horiz_center=fit_struct['x0']['val'], \
-                                                 vert_span=roi[0].stop - roi[0].start, \
+                centered_roi = make_centered_roi(vert_center=fit_struct['y0']['val'],
+                                                 horiz_center=fit_struct['x0']['val'],
+                                                 vert_span=roi[0].stop - roi[0].start,
                                                  horiz_span=roi[1].stop - roi[1].start)
                 if i+1 == iterations:
-                    centered_roi = make_centered_roi(vert_center=fit_struct['y0']['val'], \
-                                                     horiz_center=fit_struct['x0']['val'], \
-                                                     vert_span=roi_final_shape[0], \
+                    centered_roi = make_centered_roi(vert_center=fit_struct['y0']['val'],
+                                                     horiz_center=fit_struct['x0']['val'],
+                                                     vert_span=roi_final_shape[0],
                                                      horiz_span=roi_final_shape[1])
-                roi_guess_array[pt,twz]=centered_roi
+                roi_guess_array[pt, twz]=centered_roi
             result[f'iteration-{i:01d}'][f'point-{pt:02d}'] = res
         if not quiet:
             for twz in range(num_twz):
