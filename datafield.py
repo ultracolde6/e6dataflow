@@ -61,6 +61,32 @@ class DataStreamDataField(ShotDataField):
                           'not be manipulated')
 
 
+# class H5ShotDataField(ShotDataField):
+#     def __init__(self, *, name):
+#         super(H5ShotDataField, self).__init__(name=name)
+#         self.h5_path = None
+#
+#     def reset(self):
+#         super(H5ShotDataField, self).reset()
+#         self.datamodel.data_dict['shot_data'][self.name] = dict()
+#         self.datafield_dict = self.datamodel.data_dict['shot_data'][self.name]
+#
+#     def link_within_datamodel(self):
+#         super(H5ShotDataField, self).link_within_datamodel()
+#         if self.name not in self.datamodel.data_dict['shot_data']:
+#             self.datamodel.data_dict['shot_data'][self.name] = dict()
+#         self.datafield_dict = self.datamodel.data_dict['shot_data'][self.name]
+#
+#     def get_data(self, shot_num):
+#         shot_key = f'shot_{shot_num:05d}'
+#         data = self.datafield_dict[shot_key]
+#         return data
+#
+#     def set_data(self, shot_num, data):
+#         shot_key = f'shot_{shot_num:05d}'
+#         self.datafield_dict[shot_key] = data
+
+
 class DataDictShotDataField(ShotDataField):
     def __init__(self, *, name):
         super(DataDictShotDataField, self).__init__(name=name)

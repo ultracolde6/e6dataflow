@@ -130,10 +130,14 @@ class DataModel(Rebuildable):
         added to the DataModel using add_datatool.
     """
     # TODO: Fix main_datastream documentation
-    # TODO: Reset documentatoin
-    def __init__(self, *, name='datamodel', run_name, num_points, run_doc_string):
+    # TODO: Reset documentation
+    def __init__(self, *, name='datamodel', datamodel_dir=None, run_name, num_points, run_doc_string):
 
         self.name = name
+        self.datamodel_dir = datamodel_dir
+        if self.datamodel_dir is None:
+            self.datamodel_dir = Path.cwd()
+
         self.run_name = run_name
         self.num_points = num_points
         self.run_doc_string = run_doc_string
@@ -159,7 +163,7 @@ class DataModel(Rebuildable):
                 datatool_list.append(datatool)
         return datatool_list
 
-    def run_continuously(self, quiet=False, handler_quiet=False, save_every_shot=False, datamodel_path=None):
+    def run_continuously(self, quiet=False, handler_quiet=False, save_every_shot=False, override_datamodel_dir=None):
         """ Repeatedly run the DataModel to keep it up to date with new data as it comes in.
 
         Parameters
@@ -183,13 +187,14 @@ class DataModel(Rebuildable):
                 print(f'{time_string} -- .. Waiting for data: {shot_key} - {loop_key} - {point_key} ..')
                 waiting_message_is_current = True
             self.run(quiet=quiet, handler_quiet=handler_quiet, save_every_shot=save_every_shot,
-                     datamodel_path=datamodel_path)
+                     override_datamodel_dir=override_datamodel_dir)
             # If new shots have been handled then the waiting message is primed to be printed again.
             if self.last_handled_shot > old_last_handled_shot:
                 waiting_message_is_current = False
             plt.pause(0.01)
 
-    def run(self, quiet=False, handler_quiet=False, save_every_shot=False, datamodel_path=None, save_point_data=True,
+    def run(self, quiet=False, handler_quiet=False, save_every_shot=False, override_datamodel_dir=None,
+            save_point_data=True,
             save_before_reporting=False):
         """ Run the DataModel to process the raw data through Processors, Aggregators, Reporters.
 
@@ -222,16 +227,16 @@ class DataModel(Rebuildable):
             self.report_single_shot(shot_num, quiet=handler_quiet)
             self.last_handled_shot = shot_num
             if save_every_shot:
-                self.save_datamodel(datamodel_path=datamodel_path)
+                self.save_datamodel(override_datamodel_dir=override_datamodel_dir)
             if self.last_handled_shot+1 == self.num_shots and save_before_reporting:
-                self.save_datamodel(datamodel_path=datamodel_path)
+                self.save_datamodel(override_datamodel_dir=override_datamodel_dir)
         self.report_point_data()
         if save_point_data:
-            self.save_datamodel(datamodel_path=datamodel_path)
+            self.save_datamodel(override_datamodel_dir=override_datamodel_dir)
         else:
             self.data_dict['point_data'] = {}
             print('ALERT: Not saving point data.')
-            self.save_datamodel(datamodel_path=datamodel_path)
+            self.save_datamodel(override_datamodel_dir=override_datamodel_dir)
 
     def get_num_shots(self):
         """Query each datastream for its number of saved shots. Set self.num_shots to the minimal value."""
@@ -349,12 +354,14 @@ class DataModel(Rebuildable):
         shot_datafield = self.datatool_dict[datafield_name]
         shot_datafield.set_data(data_index, data)
 
-    def save_datamodel(self, datamodel_path=None):
+    def save_datamodel(self, override_datamodel_dir=None):
         self.package_rebuild_dict()
-        if not datamodel_path:
-            datamodel_path = Path(Path.cwd(), f'{self.run_name}-{self.name}.p')
+        if override_datamodel_dir is not None:
+            save_dir = override_datamodel_dir
         else:
-            datamodel_path = Path(datamodel_path, f'{self.run_name}-{self.name}.p')
+            save_dir = self.datamodel_dir
+        save_name = f'{self.run_name}-{self.name}.p'
+        datamodel_path = Path(save_dir, save_name)
         print(f'Saving datamodel to {datamodel_path}')
         datamodel_path.parent.mkdir(parents=True, exist_ok=True)
         pickle.dump(self.rebuild_dict, open(datamodel_path, 'wb'), protocol=pickle.HIGHEST_PROTOCOL)
