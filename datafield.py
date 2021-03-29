@@ -113,8 +113,10 @@ class H5PointDataField(PointDataField):
     def set_data(self, point_num, data):
         point_key = f'point_{point_num:02d}'
         if point_key in self.datafield_group:
-            del self.datafield_group[point_key]
-        self.datafield_group[point_key] = data
+            self.datafield_group[point_key][:] = data
+        else:
+            self.datafield_group[point_key] = data
+
 
 
 class DataDictShotDataField(ShotDataField):

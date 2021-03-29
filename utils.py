@@ -86,11 +86,15 @@ def qprint(string, quiet):
         print(string)
 
 
-def make_centered_roi(vert_center, horiz_center, vert_span, horiz_span):
-    vert_lower = int(vert_center - vert_span / 2)
+def make_centered_roi(vert_center, horiz_center, vert_span, horiz_span, max_vert=None, max_horiz=None):
+    vert_lower = max(int(vert_center - vert_span / 2), 0)
     vert_upper = int(vert_center + vert_span / 2)
-    horiz_lower = int(horiz_center - horiz_span / 2)
+    horiz_lower = max(int(horiz_center - horiz_span / 2), 0)
     horiz_upper = int(horiz_center + horiz_span / 2)
+    if max_vert is not None:
+        vert_upper = min(vert_upper, max_vert)
+    if max_horiz is not None:
+        horiz_upper = min(horiz_upper, max_horiz)
     vert_slice = slice(vert_lower, vert_upper, 1)
     horiz_slice = slice(horiz_lower, horiz_upper, 1)
     return vert_slice, horiz_slice
