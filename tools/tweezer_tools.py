@@ -133,7 +133,7 @@ def calc_roi_from_mean_image(datamodel, pzt_point_frame_dict, vert_center_list, 
             vert_center = vert_center_list[tweezer_num]
             horiz_center = horiz_center_list[tweezer_num]
             vert_slice, horiz_slice = fit_for_roi(mean_img,
-                                                  vert_center[tweezer_num], horiz_center[tweezer_num],
+                                                  vert_center, horiz_center,
                                                   vert_span=vert_span, horiz_span=horiz_span,
                                                   lock_span=lock_span)
             roi_tuple_list.append((vert_slice, horiz_slice))
