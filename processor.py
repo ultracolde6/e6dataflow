@@ -23,6 +23,16 @@ class CountsProcessor(Processor):
         self.frame_datafield_name = frame_datafield_name
         self.result_datafield_name = output_datafield_name
         self.roi_slice = roi_slice
+        self.mode = self.determine_roi_mode()
+
+    def determine_roi_mode(self):
+        if len(self.roi_slice) == 2 and isinstance(self.roi_slice[0], slice):
+            mode = 'single_roi'
+        elif isinstance(self.roi_slice, list) or isinstance(self.roi_slice, tuple):
+            mode = 'roi_list'
+        else:
+            raise ValueError('roi_slice must be a single roi tuple or a list or tuple or roi tuples.')
+        return mode
 
     def link_within_datamodel(self):
         super(CountsProcessor, self).link_within_datamodel()
@@ -30,8 +40,14 @@ class CountsProcessor(Processor):
         self.add_parent(self.frame_datafield_name)
 
     def _process(self, shot_num):
+        roi_slice = None
+        if self.mode == 'single_roi':
+            roi_slice = self.roi_slice
+        elif self.mode == 'roi_list':
+            loop, point = shot_to_loop_and_point(shot_num, self.datamodel.num_points)
+            roi_slice = self.roi_slice[point]
         frame = self.datamodel.get_data(self.frame_datafield_name, shot_num)
-        roi_frame = frame[self.roi_slice]
+        roi_frame = frame[roi_slice]
         counts = np.nansum(roi_frame)
         self.datamodel.set_data(self.result_datafield_name, shot_num, counts)
 
