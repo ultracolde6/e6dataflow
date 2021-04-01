@@ -51,7 +51,7 @@ def fit_for_roi(img, vert_center, horiz_center, vert_span, horiz_span, lock_span
         vert0_result = vert_center
 
     vert_slice, horiz_slice = make_centered_roi(vert0_result, horiz0_result, vert_span_result, horiz_span_result)
-    return vert_slice, horiz_slice
+    return vert_slice, horiz_slice, success
 
 
 def generate_pzt_point_frame_dict(num_pzt, num_point, num_frame, mode='single',
@@ -128,7 +128,7 @@ def get_num_shots(data_dir):
 
 def get_frame_from_h5(h5_path, frame_num):
     frame_key = f'frame-{frame_num:02d}'
-    with h5py.File(h5_path,'r') as h5_file:
+    with h5py.File(h5_path, 'r') as h5_file:
         data = np.array(h5_file[frame_key][:].astype(float))
     return data
 
@@ -145,8 +145,9 @@ def get_avg_frame_over_loops(data_dir, data_prefix, point_num, frame_num, num_po
     return avg_frame
 
 
-def calc_roi_from_mean_image(data_dir, data_prefix, num_points, pzt_point_frame_dict, vert_center_list, horiz_center_list,
-                             vert_span, horiz_span, lock_span=True):
+def get_roi_dict(data_dir, data_prefix, num_points, pzt_point_frame_dict,
+                 vert_center_list, horiz_center_list,
+                 vert_span, horiz_span, lock_span=True, span_scale=3.0):
     first_shot_h5_path = Path(data_dir, f'{data_prefix}_00000.h5')
     blank_frame = np.zeros_like(get_frame_from_h5(first_shot_h5_path, frame_num=0))
     num_tweezer = len(vert_center_list)
@@ -155,6 +156,7 @@ def calc_roi_from_mean_image(data_dir, data_prefix, num_points, pzt_point_frame_
         num_elements = len(point_frame_tuple_list)
         tot_avg_frame = 0 * blank_frame
         roi_tuple_list = []
+        roi_tuple_string_list = []
         for point_frame_tuple in point_frame_tuple_list:
             point_num = point_frame_tuple[0]
             frame_num = point_frame_tuple[1]
@@ -166,19 +168,25 @@ def calc_roi_from_mean_image(data_dir, data_prefix, num_points, pzt_point_frame_
         for tweezer_num in range(num_tweezer):
             vert_center = vert_center_list[tweezer_num]
             horiz_center = horiz_center_list[tweezer_num]
-            vert_slice, horiz_slice = fit_for_roi(tot_avg_frame,
-                                                  vert_center, horiz_center,
-                                                  vert_span=vert_span, horiz_span=horiz_span,
-                                                  lock_span=lock_span,
-                                                  span_scale=3.0)
+            vert_slice, horiz_slice, success = fit_for_roi(tot_avg_frame,
+                                                           vert_center, horiz_center,
+                                                           vert_span=vert_span, horiz_span=horiz_span,
+                                                           lock_span=lock_span,
+                                                           span_scale=span_scale)
             roi_tuple_list.append((vert_slice, horiz_slice))
+            roi_tuple_string = f'({vert_slice.start}, {vert_slice.stop}) x ({horiz_slice.start}, {horiz_slice.stop})'
+            if not success:
+                roi_tuple_string += ' FAIL'
+            roi_tuple_string_list.append(roi_tuple_string)
             plot_vert_span = vert_slice.stop - vert_slice.start
             plot_horiz_span = horiz_slice.stop - horiz_slice.start
             rect = patches.Rectangle((horiz_slice.start, vert_slice.start),
                                      plot_horiz_span, plot_vert_span,
                                      linewidth=1, edgecolor='w', facecolor='none')
             ax.add_patch(rect)
-
+        roi_string = ('ROI List\n (vert_start, vert_stop) x (horiz_start, horiz_stop)\n'
+                      + '\n'.join([roi_tuple_string for roi_tuple_string in roi_tuple_string_list]))
+        ax.text(x=2, y=0.5, s=roi_string, transform=ax.transAxes, verticalalignment='center')
         output_pzt_roi_dict[pzt_key] = roi_tuple_list
 
     return output_pzt_roi_dict
