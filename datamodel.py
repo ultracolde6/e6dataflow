@@ -153,9 +153,12 @@ class DataModel(Rebuildable):
         self.data_dict['point_data'] = dict()
 
         data_h5_path = Path(self.datamodel_dir, f'{self.run_name}-{self.name}.h5')
-        self.data_h5 = h5py.File(data_h5_path, 'w')
-        self.data_h5.create_group('shot_data')
-        self.data_h5.create_group('point_data')
+        if not data_h5_path.exists():
+            self.data_h5 = h5py.File(data_h5_path, 'a')
+            self.data_h5.create_group('shot_data')
+            self.data_h5.create_group('point_data')
+        else:
+            self.data_h5 = h5py.File(data_h5_path, 'a')
 
         self.reset_list = []
 

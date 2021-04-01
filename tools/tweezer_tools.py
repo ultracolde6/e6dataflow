@@ -1,4 +1,7 @@
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.patches as patches
+
 from e6dataflow.tools.smart_gaussian2d_fit import fit_gaussian2d
 from e6dataflow.utils import make_centered_roi
 
@@ -24,15 +27,13 @@ def fit_for_roi(img, vert_center, horiz_center, vert_span, horiz_span, lock_span
     horiz_halfspan = np.ceil(horiz_span / 2)
     lower_horiz = int(horiz_center - horiz_halfspan)
     upper_horiz = int(horiz_center + horiz_halfspan)
-    print(f'lower_x = {lower_horiz}, upper_x = {upper_horiz}')
 
     vert_halfspan = np.ceil(vert_span / 2)
     lower_vert = int(vert_center - vert_halfspan)
     upper_vert = int(vert_center + vert_halfspan)
-    print(f'lower_y = {lower_vert}, upper_y = {upper_vert}')
 
     fit_img = img[lower_vert:upper_vert, lower_horiz:upper_horiz]
-    fit_dict = fit_gaussian2d(fit_img)
+    fit_dict = fit_gaussian2d(fit_img, show_plot=False, lightweight=True)
 
     horiz0_result = fit_dict['x0']['val'] + lower_horiz
     vert0_result = fit_dict['y0']['val'] + lower_vert
@@ -129,6 +130,9 @@ def calc_roi_from_mean_image(datamodel, pzt_point_frame_dict, vert_center_list, 
             frame_key = f'frame-{frame_num:02d}_mean'
             img = datamodel.get_data(frame_key, point_num)
             mean_img += img / num_elements
+        fig = plt.figure()
+        ax = fig.add_subplot(1, 1, 1)
+        ax.imshow(mean_img)
         for tweezer_num in range(num_tweezer):
             vert_center = vert_center_list[tweezer_num]
             horiz_center = horiz_center_list[tweezer_num]
@@ -137,5 +141,13 @@ def calc_roi_from_mean_image(datamodel, pzt_point_frame_dict, vert_center_list, 
                                                   vert_span=vert_span, horiz_span=horiz_span,
                                                   lock_span=lock_span)
             roi_tuple_list.append((vert_slice, horiz_slice))
+            plot_vert_span = vert_slice.stop - vert_slice.start
+            plot_horiz_span = horiz_slice.stop - horiz_slice.start
+            rect = patches.Rectangle((horiz_slice.start, vert_slice.start),
+                                     plot_horiz_span, plot_vert_span,
+                                     linewidth=1, edgecolor='w', facecolor='none')
+            ax.add_patch(rect)
+
         output_pzt_roi_dict[pzt_key] = roi_tuple_list
+
     return output_pzt_roi_dict

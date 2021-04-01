@@ -151,7 +151,7 @@ def make_visualization_figure(fit_struct, show_plot=True, save_name=None):
     return
 
 
-def create_fit_struct(img, popt_dict, pcov, conf_level, dof, lightweight=False):
+def create_fit_struct(img, popt_dict, pcov, conf_level, dof, success, lightweight=False):
     y_coords, x_coords = np.indices(img.shape)
     model_img = gaussian_2d(x_coords, y_coords, **popt_dict)
     fit_struct = dict()
@@ -162,6 +162,7 @@ def create_fit_struct(img, popt_dict, pcov, conf_level, dof, lightweight=False):
         fit_struct_param_keys.append(key)
     fit_struct['param_keys'] = fit_struct_param_keys
     fit_struct['cov'] = pcov
+    fit_struct['success'] = success
     if not lightweight:
         fit_struct['data_img'] = img
         fit_struct['model_img'] = model_img
@@ -296,6 +297,7 @@ def fit_gaussian2d(img, zoom=1.0, angle_offset=0.0, fix_lin_slope=False, fix_ang
     popt_dict = dict(zip(param_keys, popt))
     jac = lsq_struct['jac']
     cost = lsq_struct['cost']
+    success = lsq_struct['success']
 
     popt_dict['sx'] = np.abs(popt_dict['sx'])
     popt_dict['sy'] = np.abs(popt_dict['sy'])
@@ -329,7 +331,7 @@ def fit_gaussian2d(img, zoom=1.0, angle_offset=0.0, fix_lin_slope=False, fix_ang
         print(e)
         cov = 0 * jac
 
-    fit_struct = create_fit_struct(img, popt_dict, cov, conf_level, dof, lightweight=lightweight)
+    fit_struct = create_fit_struct(img, popt_dict, cov, conf_level, dof, success, lightweight=lightweight)
     if show_plot or (save_name is not None):
         if not lightweight:
             make_visualization_figure(fit_struct, show_plot, save_name)

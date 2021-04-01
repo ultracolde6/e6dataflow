@@ -118,7 +118,6 @@ class H5PointDataField(PointDataField):
             self.datafield_group[point_key] = data
 
 
-
 class DataDictShotDataField(ShotDataField):
     def __init__(self, *, name):
         super(DataDictShotDataField, self).__init__(name=name)
