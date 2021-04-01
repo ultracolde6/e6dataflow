@@ -133,21 +133,22 @@ def get_frame_from_h5(h5_path, frame_num):
     return data
 
 
-def get_avg_frame_over_loops(data_dir, data_prefix, point_num, frame_num, num_points):
+def get_avg_frame_over_loops(data_dir, data_prefix, point_num, frame_num, num_points, max_shot_num=None):
     num_shots = get_num_shots(data_dir)
     shot_list, num_loops = get_shot_list_from_point(point=point_num, num_points=num_points, num_shots=num_shots)
     first_shot_h5_path = Path(data_dir, f'{data_prefix}_00000.h5')
     avg_frame = np.zeros_like(get_frame_from_h5(first_shot_h5_path, frame_num=frame_num))
     for loop_num, shot_num in enumerate(shot_list):
-        h5_path = Path(data_dir, f'{data_prefix}_{shot_num:05d}.h5')
-        avg_frame += get_frame_from_h5(h5_path, frame_num=frame_num) / num_loops
-        print(f'point: {point_num}, frame: {frame_num}, loop: {loop_num}, shot: {shot_num}')
+        if shot_num <= max_shot_num:
+            h5_path = Path(data_dir, f'{data_prefix}_{shot_num:05d}.h5')
+            avg_frame += get_frame_from_h5(h5_path, frame_num=frame_num) / num_loops
+            print(f'point: {point_num}, frame: {frame_num}, loop: {loop_num}, shot: {shot_num}')
     return avg_frame
 
 
 def get_roi_dict(data_dir, data_prefix, num_points, pzt_point_frame_dict,
                  vert_center_list, horiz_center_list,
-                 vert_span, horiz_span, lock_span=True, span_scale=3.0):
+                 vert_span, horiz_span, lock_span=True, span_scale=3.0, max_shot_num=None):
     first_shot_h5_path = Path(data_dir, f'{data_prefix}_00000.h5')
     blank_frame = np.zeros_like(get_frame_from_h5(first_shot_h5_path, frame_num=0))
     num_tweezer = len(vert_center_list)
@@ -160,7 +161,8 @@ def get_roi_dict(data_dir, data_prefix, num_points, pzt_point_frame_dict,
         for point_frame_tuple in point_frame_tuple_list:
             point_num = point_frame_tuple[0]
             frame_num = point_frame_tuple[1]
-            loop_avg_frame = get_avg_frame_over_loops(data_dir, data_prefix, point_num, frame_num, num_points)
+            loop_avg_frame = get_avg_frame_over_loops(data_dir, data_prefix, point_num, frame_num, num_points,
+                                                      max_shot_num=max_shot_num)
             tot_avg_frame += loop_avg_frame / num_elements
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
