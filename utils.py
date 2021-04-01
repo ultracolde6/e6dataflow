@@ -44,14 +44,14 @@ def shot_to_loop_and_point(shot, num_points=1,
 
 def get_shot_list_from_point(point, num_points, num_shots, start_shot=0, stop_shot=None):
     # TODO: Implement different conventions for shot and point start indices
-    shots = np.arange(point, num_shots, num_points)
-    start_mask = start_shot <= shots
-    shots = shots[start_mask]
+    shot_list = np.arange(point, num_shots, num_points)
+    start_mask = start_shot <= shot_list
+    shot_list = shot_list[start_mask]
     if stop_shot is not None:
-        stop_mask = shots <= stop_shot
-        shots = shots[stop_mask]
-    num_loops = len(shots)
-    return shots, num_loops
+        stop_mask = shot_list <= stop_shot
+        shot_list = shot_list[stop_mask]
+    num_loops = len(shot_list)
+    return shot_list, num_loops
 
 
 def get_shot_labels(shot_num, num_points):

@@ -1,14 +1,16 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from pathlib import Path
+import h5py
 
 from e6dataflow.tools.smart_gaussian2d_fit import fit_gaussian2d
-from e6dataflow.utils import make_centered_roi
+from e6dataflow.utils import make_centered_roi, get_shot_list_from_point
 
 
-def estimate_tweezer_centers(first_tweezer_vert, first_tweezer_horiz,
-                             last_tweezer_vert, last_tweezer_horiz,
-                             num_tweezers):
+def interpolate_tweezer_positions(first_tweezer_vert, first_tweezer_horiz,
+                                  last_tweezer_vert, last_tweezer_horiz,
+                                  num_tweezers):
     tweezer_vert_spacing = (last_tweezer_vert - first_tweezer_vert) / (num_tweezers - 1)
     tweezer_horiz_spacing = (last_tweezer_horiz - first_tweezer_horiz) / (num_tweezers - 1)
     vert_center_list = []
@@ -22,7 +24,7 @@ def estimate_tweezer_centers(first_tweezer_vert, first_tweezer_horiz,
     return vert_center_list, horiz_center_list
 
 
-def fit_for_roi(img, vert_center, horiz_center, vert_span, horiz_span, lock_span=True):
+def fit_for_roi(img, vert_center, horiz_center, vert_span, horiz_span, lock_span=True, span_scale=3.0):
 
     horiz_halfspan = np.ceil(horiz_span / 2)
     lower_horiz = int(horiz_center - horiz_halfspan)
@@ -35,14 +37,18 @@ def fit_for_roi(img, vert_center, horiz_center, vert_span, horiz_span, lock_span
     fit_img = img[lower_vert:upper_vert, lower_horiz:upper_horiz]
     fit_dict = fit_gaussian2d(fit_img, show_plot=False, lightweight=True)
 
-    horiz0_result = fit_dict['x0']['val'] + lower_horiz
-    vert0_result = fit_dict['y0']['val'] + lower_vert
-    if not lock_span:
-        horiz_span_result = int(3 * fit_dict['sx']['val'])
-        vert_span_result = int(3 * fit_dict['sy']['val'])
+    horiz_span_result = int(horiz_span)
+    vert_span_result = int(vert_span)
+    success = fit_dict['success']
+    if success:
+        horiz0_result = fit_dict['x0']['val'] + lower_horiz
+        vert0_result = fit_dict['y0']['val'] + lower_vert
+        if not lock_span:
+            horiz_span_result = int(span_scale * fit_dict['sx']['val'])
+            vert_span_result = int(span_scale * fit_dict['sy']['val'])
     else:
-        horiz_span_result = int(horiz_span)
-        vert_span_result = int(vert_span)
+        horiz0_result = horiz_center
+        vert0_result = vert_center
 
     vert_slice, horiz_slice = make_centered_roi(vert0_result, horiz0_result, vert_span_result, horiz_span_result)
     return vert_slice, horiz_slice
@@ -115,31 +121,56 @@ def generate_pzt_point_frame_dict(num_pzt, num_point, num_frame, mode='single',
     return pzt_point_frame_dict
 
 
-def calc_roi_from_mean_image(datamodel, pzt_point_frame_dict, vert_center_list, horiz_center_list,
+def get_num_shots(data_dir):
+    num_shots = len(list(data_dir.glob('*.h5')))
+    return num_shots
+
+
+def get_frame_from_h5(h5_path, frame_num):
+    frame_key = f'frame-{frame_num:02d}'
+    with h5py.File(h5_path,'r') as h5_file:
+        data = np.array(h5_file[frame_key][:].astype(float))
+    return data
+
+
+def get_avg_frame_over_loops(data_dir, data_prefix, point_num, frame_num, num_points):
+    num_shots = get_num_shots(data_dir)
+    shot_list, num_loops = get_shot_list_from_point(point=point_num, num_points=num_points, num_shots=num_shots)
+    first_shot_h5_path = Path(data_dir, f'{data_prefix}_00000.h5')
+    avg_frame = np.zeros_like(get_frame_from_h5(first_shot_h5_path, frame_num=frame_num))
+    for loop_num, shot_num in enumerate(shot_list):
+        h5_path = Path(data_dir, f'{data_prefix}_{shot_num:05d}.h5')
+        avg_frame += get_frame_from_h5(h5_path, frame_num=frame_num) / num_loops
+        print(f'point: {point_num}, frame: {frame_num}, loop: {loop_num}, shot: {shot_num}')
+    return avg_frame
+
+
+def calc_roi_from_mean_image(data_dir, data_prefix, num_points, pzt_point_frame_dict, vert_center_list, horiz_center_list,
                              vert_span, horiz_span, lock_span=True):
-    blank_img = 0 * datamodel.get_data('frame-00_mean', data_index=0)
+    first_shot_h5_path = Path(data_dir, f'{data_prefix}_00000.h5')
+    blank_frame = np.zeros_like(get_frame_from_h5(first_shot_h5_path, frame_num=0))
     num_tweezer = len(vert_center_list)
     output_pzt_roi_dict = dict()
     for pzt_key, point_frame_tuple_list in pzt_point_frame_dict.items():
         num_elements = len(point_frame_tuple_list)
-        mean_img = 0 * blank_img
+        tot_avg_frame = 0 * blank_frame
         roi_tuple_list = []
         for point_frame_tuple in point_frame_tuple_list:
             point_num = point_frame_tuple[0]
             frame_num = point_frame_tuple[1]
-            frame_key = f'frame-{frame_num:02d}_mean'
-            img = datamodel.get_data(frame_key, point_num)
-            mean_img += img / num_elements
+            loop_avg_frame = get_avg_frame_over_loops(data_dir, data_prefix, point_num, frame_num, num_points)
+            tot_avg_frame += loop_avg_frame / num_elements
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
-        ax.imshow(mean_img)
+        ax.imshow(tot_avg_frame)
         for tweezer_num in range(num_tweezer):
             vert_center = vert_center_list[tweezer_num]
             horiz_center = horiz_center_list[tweezer_num]
-            vert_slice, horiz_slice = fit_for_roi(mean_img,
+            vert_slice, horiz_slice = fit_for_roi(tot_avg_frame,
                                                   vert_center, horiz_center,
                                                   vert_span=vert_span, horiz_span=horiz_span,
-                                                  lock_span=lock_span)
+                                                  lock_span=lock_span,
+                                                  span_scale=3.0)
             roi_tuple_list.append((vert_slice, horiz_slice))
             plot_vert_span = vert_slice.stop - vert_slice.start
             plot_horiz_span = horiz_slice.stop - horiz_slice.start
