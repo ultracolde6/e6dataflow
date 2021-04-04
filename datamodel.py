@@ -133,7 +133,6 @@ class DataModel(Rebuildable):
     # TODO: Fix main_datastream documentation
     # TODO: Reset documentation
     def __init__(self, *, name='datamodel', datamodel_dir=None, run_name, num_points, run_doc_string):
-
         self.name = name
         self.datamodel_dir = datamodel_dir
         if self.datamodel_dir is None:
@@ -283,7 +282,7 @@ class DataModel(Rebuildable):
         datatool : e6dataflow.datatool.DataTool
             DataTool to be added.
         overwrite : bool
-            If True then, in the event that that the DataModel already contains a DataTool with the same name as
+            If True then, in the event that the DataModel already contains a DataTool with the same name as
             datatool, the new datatool will overwrite the old. and will be added to self.reset_list (Default is False)
         rebuilding : bool
             If this DataTool is added outside of a rebuild process the last processed set is set to -1 to ensure the
@@ -321,40 +320,37 @@ class DataModel(Rebuildable):
     def link_datatools(self):
         for datatool in self.datatool_dict.values():
             datatool.link_within_datamodel()
-        if self.reset_list:
-            print('Resetting the following datatools:')
+        if len(self.reset_list) > 0:
+            print('Resetting datatools:')
         for datatool_name in self.reset_list:
             datatool = self.datatool_dict[datatool_name]
             datatool.reset()
-            print(f'{datatool.datatool_type}: {datatool.name}')
-            for child_datatool_name in datatool.get_descendents():
-                child_datatool = self.datatool_dict[child_datatool_name]
-                child_datatool.reset()
-                print(f'{child_datatool.datatool_type}: {child_datatool.name}')
-
-    def get_datum(self, datafield_name, data_index):
-        datafield = self.datatool_dict[datafield_name]
-        data = datafield.get_data(data_index)
-        return data
+            # print(f'{datatool.datatool_type}: {datatool.name}')
+            # for child_datatool_name in datatool.get_descendents():
+            #     child_datatool = self.datatool_dict[child_datatool_name]
+            #     child_datatool.reset()
+            #     print(f'{child_datatool.datatool_type}: {child_datatool.name}')
 
     def get_data(self, datafield_name, data_index):
+        datafield = self.datatool_dict[datafield_name]
         if isinstance(data_index, int):
-            return self.get_datum(datafield_name, data_index)
-        if data_index == 'all':
-            shot_list = range(self.num_shots)
+            data = datafield.get_data(data_index)
         else:
-            shot_list = data_index
-        data_list = []
-        for shot_num in shot_list:
-            data = self.get_datum(datafield_name, shot_num)
-            data_list.append(data)
-        return data_list
+            if data_index == 'all':
+                shot_list = range(self.num_shots)
+            else:
+                shot_list = data_index
+            data = []
+            for shot_num in shot_list:
+                shot_data = datafield.get_data(shot_num)
+                data.append(shot_data)
+        return data
 
     def get_data_by_point(self, datafield_name, point_num, shots=None):
         if not shots:
             shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, self.num_shots)
         else:
-            shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, max(shots)+1)
+            shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, max(shots) + 1)
             shot_list = sorted(set(shot_list).intersection(shots))
         data_list = self.get_data(datafield_name, list(shot_list))
         return data_list

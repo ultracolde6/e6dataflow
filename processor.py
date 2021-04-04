@@ -34,10 +34,10 @@ class CountsProcessor(Processor):
             raise ValueError('roi_slice must be a single roi tuple or a list or tuple or roi tuples.')
         return mode
 
-    def link_within_datamodel(self):
-        super(CountsProcessor, self).link_within_datamodel()
-        self.add_child(self.result_datafield_name)
-        self.add_parent(self.frame_datafield_name)
+    # def link_within_datamodel(self):
+    #     super(CountsProcessor, self).link_within_datamodel()
+    #     self.add_child(self.result_datafield_name)
+    #     self.add_parent(self.frame_datafield_name)
 
     def _process(self, shot_num):
         roi_slice = None

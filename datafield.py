@@ -16,13 +16,6 @@ class ShotDataField(DataField):
     def set_data(self, shot_num, data):
         raise NotImplementedError
 
-    def get_data_list(self):
-        data_list = []
-        for shot_num in range(self.datamodel.last_handled_shot):
-            data = self.get_data(shot_num)
-            data_list.append(data)
-        return data_list
-
 
 class PointDataField(DataField):
     def __init__(self, *, name):
