@@ -242,3 +242,16 @@ def auto_roi(data_dir, data_prefix,
                                 horiz_search_span=horiz_search_span,
                                 lock_span=lock_span)
     return pzt_roi_dict, pzt_point_frame_dict
+
+
+def get_roi_list_by_point(pzt_roi_dict, pzt_point_frame_dict, num_points, frame_num, tweezer_num):
+    roi_list = []
+    for point_num in range(num_points):
+        for pzt_num, point_frame_tuple_list in pzt_point_frame_dict.items():
+            for point_frame_tuple in point_frame_tuple_list:
+                point_num_to_check = point_frame_tuple[0]
+                frame_num_to_check = point_frame_tuple[1]
+                if point_num_to_check == point_num and frame_num_to_check == frame_num:
+                    new_roi = pzt_roi_dict[pzt_num][tweezer_num]
+                    roi_list.append(new_roi)
+    return roi_list
