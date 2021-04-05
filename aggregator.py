@@ -34,16 +34,16 @@ class AvgStdAggregator(Aggregator):
         self.output_std_datafield_name = output_std_datafield_name
         self.num_aggregated_shots_list = None
         self.child_name_list = [self.output_mean_datafield_name, self.output_std_datafield_name]
-        self.parent_name_list = [self.input_datafield_name]
-
-    def reset(self):
-        super(AvgStdAggregator, self).reset()
-        self.num_aggregated_shots_list = [0] * self.datamodel.num_points
+        self.parent_name_list = [self.input_datafield_name] + self.verifier_datafield_names
 
     def link_within_datamodel(self):
         super(AvgStdAggregator, self).link_within_datamodel()
         if self.num_aggregated_shots_list is None:
             self.num_aggregated_shots_list = [0] * self.datamodel.num_points
+
+    def reset(self):
+        super(AvgStdAggregator, self).reset()
+        self.num_aggregated_shots_list = [0] * self.datamodel.num_points
 
     def _aggregate(self, shot_num):
         loop_num, point_num = shot_to_loop_and_point(shot_num, self.datamodel.num_points)
