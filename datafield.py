@@ -35,6 +35,8 @@ class DataStreamDataField(ShotDataField):
         self.h5_subpath = h5_subpath
         self.h5_dataset_name = h5_dataset_name
         self.datastream = None
+        self.child_name_list = []
+        self.parent_name_list = [datastream_name]
 
     def link_within_datamodel(self):
         super(DataStreamDataField, self).link_within_datamodel()
@@ -85,6 +87,8 @@ class H5PointDataField(PointDataField):
     def __init__(self, *, name):
         super(H5PointDataField, self).__init__(name=name)
         self.datafield_group = None
+        self.child_name_list = []
+        self.parent_name_list = []
 
     def reset(self):
         super(H5PointDataField, self).reset()
@@ -115,6 +119,8 @@ class DataDictShotDataField(ShotDataField):
     def __init__(self, *, name):
         super(DataDictShotDataField, self).__init__(name=name)
         self.datafield_dict = None
+        self.child_name_list = []
+        self.parent_name_list = []
 
     def reset(self):
         super(DataDictShotDataField, self).reset()

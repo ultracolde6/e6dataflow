@@ -66,6 +66,10 @@ class DataTool(Rebuildable):
             raise ValueError(f'child_name_list is not defined in Datatool \'{self.name}\'. Must explicity set '
                              f'attribute child_name_list in __init__. If Datatool has no children'
                              f'set child_name_list = [].')
+        for child_name in self.child_name_list:
+            child = self.datamodel.datatool_dict[child_name]
+            if self.name not in child.parent_name_list:
+                child.parent_name_list.append(self.name)
         if self.parent_name_list is None:
             raise ValueError(f'parent_name_list is not defined in Datatool \'{self.name}\'. Must explicity set '
                              f'attribute parent_name_list in __init__. If Datatool has no parents'

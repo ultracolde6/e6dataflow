@@ -188,22 +188,20 @@ class DataModel(Rebuildable):
         while True:
             self.get_num_shots()
             old_last_handled_shot = self.last_handled_shot
-            # Check if there is new data and if the waiting message for the next shot has already been printed
-            if old_last_handled_shot + 1 == self.num_shots and not waiting_message_is_current:
-                shot_key, loop_key, point_key = get_shot_labels(old_last_handled_shot + 1, self.num_points)
-                time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-                print(f'{time_string} -- .. Waiting for data: {shot_key} - {loop_key} - {point_key} ..')
-                waiting_message_is_current = True
-            self.run(quiet=quiet, handler_quiet=handler_quiet, save_every_shot=save_every_shot,
-                     override_datamodel_dir=override_datamodel_dir)
-            # If new shots have been handled then the waiting message is primed to be printed again.
-            if self.last_handled_shot > old_last_handled_shot:
+            if old_last_handled_shot + 1 == self.num_shots:
+                if not waiting_message_is_current:
+                    shot_key, loop_key, point_key = get_shot_labels(old_last_handled_shot + 1, self.num_points)
+                    time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+                    print(f'{time_string} -- .. Waiting for data: {shot_key} - {loop_key} - {point_key} ..')
+                    waiting_message_is_current = True
+            else:
+                self.run(quiet=quiet, handler_quiet=handler_quiet, save_every_shot=save_every_shot,
+                         override_datamodel_dir=override_datamodel_dir)
                 waiting_message_is_current = False
-            plt.pause(0.01)
+                plt.pause(0.01)
 
-    def run(self, quiet=False, handler_quiet=False, save_every_shot=False, override_datamodel_dir=None,
-            save_point_data=True,
-            save_before_reporting=False):
+    def run(self, quiet=False, handler_quiet=False, save_every_shot=False,
+            raw_data_access=True, override_datamodel_dir=None):
         """ Run the DataModel to process the raw data through Processors, Aggregators, Reporters.
 
         parameters
@@ -220,12 +218,11 @@ class DataModel(Rebuildable):
             True. This can be set to False to suppress this behavior and only save after processing all current data.
             (Default is False)
         """
-        self.get_num_shots()
-
-        if self.num_shots == 0:
-            self.num_shots = self.last_handled_shot+1
+        if raw_data_access is True:
+            self.get_num_shots()
         if self.last_handled_shot + 1 == self.num_shots:
             print('No new data.')
+
         for shot_num in range(self.last_handled_shot + 1, self.num_shots):
             shot_key, loop_key, point_key = get_shot_labels(self.last_handled_shot + 1, self.num_points)
             time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -236,15 +233,8 @@ class DataModel(Rebuildable):
             self.last_handled_shot = shot_num
             if save_every_shot:
                 self.save_datamodel(override_datamodel_dir=override_datamodel_dir)
-            if self.last_handled_shot+1 == self.num_shots and save_before_reporting:
-                self.save_datamodel(override_datamodel_dir=override_datamodel_dir)
+        self.save_datamodel(override_datamodel_dir=override_datamodel_dir)
         self.report_point_data()
-        if save_point_data:
-            self.save_datamodel(override_datamodel_dir=override_datamodel_dir)
-        else:
-            self.data_dict['point_data'] = {}
-            print('ALERT: Not saving point data.')
-            self.save_datamodel(override_datamodel_dir=override_datamodel_dir)
 
     def get_num_shots(self):
         """Query each datastream for its number of saved shots. Set self.num_shots to the minimal value."""

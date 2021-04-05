@@ -21,9 +21,11 @@ class CountsProcessor(Processor):
     def __init__(self, *, name, frame_datafield_name, output_datafield_name, roi_slice):
         super(CountsProcessor, self).__init__(name=name)
         self.frame_datafield_name = frame_datafield_name
-        self.result_datafield_name = output_datafield_name
+        self.output_datafield_name = output_datafield_name
         self.roi_slice = roi_slice
         self.mode = self.determine_roi_mode()
+        self.child_name_list = [self.output_datafield_name]
+        self.parent_name_list = [self.frame_datafield_name]
 
     def determine_roi_mode(self):
         if len(self.roi_slice) == 2 and isinstance(self.roi_slice[0], slice):
@@ -49,7 +51,7 @@ class CountsProcessor(Processor):
         frame = self.datamodel.get_data(self.frame_datafield_name, shot_num)
         roi_frame = frame[roi_slice]
         counts = np.nansum(roi_frame)
-        self.datamodel.set_data(self.result_datafield_name, shot_num, counts)
+        self.datamodel.set_data(self.output_datafield_name, shot_num, counts)
 
 
 class MultiCountsProcessor(Processor):
