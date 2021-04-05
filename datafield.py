@@ -61,17 +61,17 @@ class H5ShotDataField(ShotDataField):
         super(H5ShotDataField, self).__init__(name=name)
         self.datafield_group = None
 
-    def reset(self):
-        super(H5ShotDataField, self).reset()
-        if self.name in self.datamodel.data_h5['shot_data']:
-            del self.datamodel.data_h5['shot_data'][self.name]
-        self.datafield_group = self.datamodel.data_h5['shot_data'].create_group(name=self.name)
-
     def link_within_datamodel(self):
         super(H5ShotDataField, self).link_within_datamodel()
         if self.name not in self.datamodel.data_h5['shot_data']:
             self.datamodel.data_h5['shot_data'].create_group(name=self.name)
         self.datafield_group = self.datamodel.data_h5['shot_data'][self.name]
+
+    def reset(self):
+        super(H5ShotDataField, self).reset()
+        if self.name in self.datamodel.data_h5['shot_data']:
+            del self.datamodel.data_h5['shot_data'][self.name]
+        self.datafield_group = self.datamodel.data_h5['shot_data'].create_group(name=self.name)
 
     def get_data(self, shot_num):
         shot_key = f'shot_{shot_num:05d}'
@@ -80,6 +80,8 @@ class H5ShotDataField(ShotDataField):
 
     def set_data(self, shot_num, data):
         shot_key = f'shot_{shot_num:05d}'
+        if shot_key in self.datafield_group:
+            del self.datafield_group[shot_key]
         self.datafield_group.create_dataset(name=shot_key, data=data)
 
 
@@ -90,17 +92,17 @@ class H5PointDataField(PointDataField):
         self.child_name_list = []
         self.parent_name_list = []
 
-    def reset(self):
-        super(H5PointDataField, self).reset()
-        if self.name in self.datamodel.data_h5['point_data']:
-            del self.datamodel.data_h5['point_data'][self.name]
-        self.datafield_group = self.datamodel.data_h5['point_data'].create_group(name=self.name)
-
     def link_within_datamodel(self):
         super(H5PointDataField, self).link_within_datamodel()
         if self.name not in self.datamodel.data_h5['point_data']:
             self.datafield_group = self.datamodel.data_h5['point_data'].create_group(name=self.name)
         self.datafield_group = self.datamodel.data_h5['point_data'][self.name]
+
+    def reset(self):
+        super(H5PointDataField, self).reset()
+        if self.name in self.datamodel.data_h5['point_data']:
+            del self.datamodel.data_h5['point_data'][self.name]
+        self.datafield_group = self.datamodel.data_h5['point_data'].create_group(name=self.name)
 
     def get_data(self, point_num):
         point_key = f'point_{point_num:02d}'
@@ -110,9 +112,8 @@ class H5PointDataField(PointDataField):
     def set_data(self, point_num, data):
         point_key = f'point_{point_num:02d}'
         if point_key in self.datafield_group:
-            self.datafield_group[point_key][:] = data
-        else:
-            self.datafield_group[point_key] = data
+            del self.datafield_group[point_key]
+        self.datafield_group[point_key] = data
 
 
 class DataDictShotDataField(ShotDataField):
@@ -122,15 +123,15 @@ class DataDictShotDataField(ShotDataField):
         self.child_name_list = []
         self.parent_name_list = []
 
-    def reset(self):
-        super(DataDictShotDataField, self).reset()
-        self.datamodel.data_dict['shot_data'][self.name] = dict()
-        self.datafield_dict = self.datamodel.data_dict['shot_data'][self.name]
-
     def link_within_datamodel(self):
         super(DataDictShotDataField, self).link_within_datamodel()
         if self.name not in self.datamodel.data_dict['shot_data']:
             self.datamodel.data_dict['shot_data'][self.name] = dict()
+        self.datafield_dict = self.datamodel.data_dict['shot_data'][self.name]
+
+    def reset(self):
+        super(DataDictShotDataField, self).reset()
+        self.datamodel.data_dict['shot_data'][self.name] = dict()
         self.datafield_dict = self.datamodel.data_dict['shot_data'][self.name]
 
     def get_data(self, shot_num):
@@ -148,15 +149,15 @@ class DataDictPointDataField(PointDataField):
         super(DataDictPointDataField, self).__init__(name=name)
         self.datafield_dict = None
 
-    def reset(self):
-        super(DataDictPointDataField, self).reset()
-        self.datamodel.data_dict['point_data'][self.name] = dict()
-        self.datafield_dict = self.datamodel.data_dict['point_data'][self.name]
-
     def link_within_datamodel(self):
         super(DataDictPointDataField, self).link_within_datamodel()
         if self.name not in self.datamodel.data_dict['point_data']:
             self.datamodel.data_dict['point_data'][self.name] = dict()
+        self.datafield_dict = self.datamodel.data_dict['point_data'][self.name]
+        
+    def reset(self):
+        super(DataDictPointDataField, self).reset()
+        self.datamodel.data_dict['point_data'][self.name] = dict()
         self.datafield_dict = self.datamodel.data_dict['point_data'][self.name]
 
     def get_data(self, point_num):
