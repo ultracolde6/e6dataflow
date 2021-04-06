@@ -41,16 +41,20 @@ class DataTool(Rebuildable):
     SINGLE_SHOT_REPORTER = 'single_shot_reporter'
     POINT_REPORTER = 'point_reporter'
 
-    def __init__(self, *, name, datatool_type):
+    def __init__(self, *, name, datatool_type, parent_names):
         self.name = name
         self.datatool_type = datatool_type
+        self.parent_names = parent_names
+        if self.parent_names is not None:
+            if isinstance(self.parent_names, str):
+                self.parent_names = [parent_names]
+            self.parent_names = set(self.parent_names)
         self.datamodel = None
-        self.child_name_list = None
-        self.parent_name_list = None
+        self.child_name_set = set()
 
     def reset(self):
         print(f'resetting {self.datatool_type}: {self.name}')
-        for child_name in self.child_name_list:
+        for child_name in self.child_name_set:
             child = self.datamodel.datatool_dict[child_name]
             child.reset()
 
@@ -62,36 +66,16 @@ class DataTool(Rebuildable):
         # set_datamodel must be called before link_within_datamodel
         if self.datamodel is None:
             raise ValueError('Datamodel must be set by set_datamodel before calling link_within_datamodel.')
-        if self.child_name_list is None:
-            raise ValueError(f'child_name_list is not defined in Datatool \'{self.name}\'. Must explicity set '
-                             f'attribute child_name_list in __init__. If Datatool has no children'
-                             f'set child_name_list = [].')
-        for child_name in self.child_name_list:
-            child = self.datamodel.datatool_dict[child_name]
-            if self.name not in child.parent_name_list:
-                child.parent_name_list.append(self.name)
-        if self.parent_name_list is None:
-            raise ValueError(f'parent_name_list is not defined in Datatool \'{self.name}\'. Must explicity set '
-                             f'attribute parent_name_list in __init__. If Datatool has no parents'
-                             f'set parent_name_list = [].')
-        for parent_name in self.parent_name_list:
-            parent = self.datamodel.datatool_dict[parent_name]
-            if self.name not in parent.child_name_list:
-                parent.child_name_list.append(self.name)
-
-
-    def get_descendents(self):
-        descendent_list = []
-        for child_name in self.child_name_list:
-            descendent_list.append(child_name)
-            child = self.datamodel.datatool_dict[child_name]
-            descendent_list += child.get_descendents()
-        return descendent_list
+        if self.parent_names is not None:
+            for parent_name in self.parent_names:
+                parent = self.datamodel.datatool_dict[parent_name]
+                if self.name not in parent.child_name_set:
+                    parent.child_name_set.add(self.name)
 
 
 class ShotHandler(DataTool):
-    def __init__(self, *, name, datatool_type):
-        super(ShotHandler, self).__init__(name=name, datatool_type=datatool_type)
+    def __init__(self, *, name, datatool_type, parent_names):
+        super(ShotHandler, self).__init__(name=name, datatool_type=datatool_type, parent_names=parent_names)
         self.handled_shots = []
 
     def reset(self):

@@ -2,13 +2,14 @@ from .datatool import DataTool
 
 
 class DataField(DataTool):
-    def __init__(self, *, name, datatool_type):
-        super(DataField, self).__init__(name=name, datatool_type=datatool_type)
+    def __init__(self, *, name, datatool_type, parent_names):
+        super(DataField, self).__init__(name=name, datatool_type=datatool_type, parent_names=parent_names)
 
 
 class ShotDataField(DataField):
-    def __init__(self, *, name):
-        super(ShotDataField, self).__init__(name=name, datatool_type=DataTool.SHOT_DATAFIELD)
+    def __init__(self, *, name, parent_names):
+        super(ShotDataField, self).__init__(name=name, datatool_type=DataTool.SHOT_DATAFIELD,
+                                            parent_names=parent_names)
 
     def get_data(self, shot_num):
         raise NotImplementedError
@@ -18,8 +19,9 @@ class ShotDataField(DataField):
 
 
 class PointDataField(DataField):
-    def __init__(self, *, name):
-        super(PointDataField, self).__init__(name=name, datatool_type=DataTool.POINT_DATAFIELD)
+    def __init__(self, *, name, parent_names):
+        super(PointDataField, self).__init__(name=name, datatool_type=DataTool.POINT_DATAFIELD,
+                                             parent_names=parent_names)
 
     def get_data(self, point_num):
         raise NotImplementedError
@@ -29,14 +31,12 @@ class PointDataField(DataField):
 
 
 class DataStreamDataField(ShotDataField):
-    def __init__(self, *, name, datastream_name, h5_subpath, h5_dataset_name):
-        super(DataStreamDataField, self).__init__(name=name)
+    def __init__(self, *, name, datastream_name, h5_subpath, h5_dataset_name, parent_names):
+        super(DataStreamDataField, self).__init__(name=name, parent_names=parent_names)
         self.datastream_name = datastream_name
         self.h5_subpath = h5_subpath
         self.h5_dataset_name = h5_dataset_name
         self.datastream = None
-        self.child_name_list = []
-        self.parent_name_list = [datastream_name]
 
     def link_within_datamodel(self):
         super(DataStreamDataField, self).link_within_datamodel()
@@ -57,8 +57,8 @@ class DataStreamDataField(ShotDataField):
 
 
 class H5ShotDataField(ShotDataField):
-    def __init__(self, *, name):
-        super(H5ShotDataField, self).__init__(name=name)
+    def __init__(self, *, name, parent_names):
+        super(H5ShotDataField, self).__init__(name=name, parent_names=parent_names)
         self.datafield_group = None
 
     def link_within_datamodel(self):
@@ -86,11 +86,9 @@ class H5ShotDataField(ShotDataField):
 
 
 class H5PointDataField(PointDataField):
-    def __init__(self, *, name):
-        super(H5PointDataField, self).__init__(name=name)
+    def __init__(self, *, name, parent_names):
+        super(H5PointDataField, self).__init__(name=name, parent_names=parent_names)
         self.datafield_group = None
-        self.child_name_list = []
-        self.parent_name_list = []
 
     def link_within_datamodel(self):
         super(H5PointDataField, self).link_within_datamodel()
@@ -117,11 +115,9 @@ class H5PointDataField(PointDataField):
 
 
 class DataDictShotDataField(ShotDataField):
-    def __init__(self, *, name):
-        super(DataDictShotDataField, self).__init__(name=name)
+    def __init__(self, *, name, parent_names):
+        super(DataDictShotDataField, self).__init__(name=name, parent_names=parent_names)
         self.datafield_dict = None
-        self.child_name_list = []
-        self.parent_name_list = []
 
     def link_within_datamodel(self):
         super(DataDictShotDataField, self).link_within_datamodel()
@@ -145,8 +141,8 @@ class DataDictShotDataField(ShotDataField):
 
 
 class DataDictPointDataField(PointDataField):
-    def __init__(self, *, name):
-        super(DataDictPointDataField, self).__init__(name=name)
+    def __init__(self, *, name, parent_names):
+        super(DataDictPointDataField, self).__init__(name=name, parent_names=parent_names)
         self.datafield_dict = None
 
     def link_within_datamodel(self):

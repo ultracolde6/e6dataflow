@@ -3,8 +3,8 @@ from .utils import shot_to_loop_and_point
 
 
 class Aggregator(ShotHandler):
-    def __init__(self, *, name, verifier_datafield_names):
-        super(Aggregator, self).__init__(name=name, datatool_type=DataTool.AGGREGATOR)
+    def __init__(self, *, name, verifier_datafield_names, parent_names):
+        super(Aggregator, self).__init__(name=name, datatool_type=DataTool.AGGREGATOR, parent_names=parent_names)
         self.verifier_datafield_names = verifier_datafield_names
 
     def aggregate(self, shot_num, quiet=False):
@@ -27,14 +27,13 @@ class Aggregator(ShotHandler):
 
 class AvgStdAggregator(Aggregator):
     def __init__(self, *, name, verifier_datafield_names, input_datafield_name,
-                 output_mean_datafield_name, output_std_datafield_name):
-        super(AvgStdAggregator, self).__init__(name=name, verifier_datafield_names=verifier_datafield_names)
+                 output_mean_datafield_name, output_std_datafield_name, parent_names):
+        super(AvgStdAggregator, self).__init__(name=name, verifier_datafield_names=verifier_datafield_names,
+                                               parent_names=parent_names)
         self.input_datafield_name = input_datafield_name
         self.output_mean_datafield_name = output_mean_datafield_name
         self.output_std_datafield_name = output_std_datafield_name
         self.num_aggregated_shots_list = None
-        self.child_name_list = [self.output_mean_datafield_name, self.output_std_datafield_name]
-        self.parent_name_list = [self.input_datafield_name] + self.verifier_datafield_names
 
     def link_within_datamodel(self):
         super(AvgStdAggregator, self).link_within_datamodel()

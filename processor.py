@@ -4,8 +4,8 @@ from .utils import shot_to_loop_and_point
 
 
 class Processor(ShotHandler):
-    def __init__(self, *, name):
-        super(Processor, self).__init__(name=name, datatool_type=DataTool.PROCESSOR)
+    def __init__(self, *, name, parent_names):
+        super(Processor, self).__init__(name=name, datatool_type=DataTool.PROCESSOR, parent_names=parent_names)
 
     def process(self, shot_num, quiet=False):
         self.handle(shot_num, quiet=quiet)
@@ -18,14 +18,12 @@ class Processor(ShotHandler):
 
 
 class CountsProcessor(Processor):
-    def __init__(self, *, name, frame_datafield_name, output_datafield_name, roi):
-        super(CountsProcessor, self).__init__(name=name)
+    def __init__(self, *, name, frame_datafield_name, output_datafield_name, roi, parent_names):
+        super(CountsProcessor, self).__init__(name=name, parent_names=parent_names)
         self.frame_datafield_name = frame_datafield_name
         self.output_datafield_name = output_datafield_name
         self.roi = roi
         self.mode = self.determine_roi_mode()
-        self.child_name_list = [self.output_datafield_name]
-        self.parent_name_list = [self.frame_datafield_name]
 
     def determine_roi_mode(self):
         if len(self.roi) == 2 and isinstance(self.roi[0], slice):
@@ -50,8 +48,8 @@ class CountsProcessor(Processor):
 
 
 class ThresholdProcessor(Processor):
-    def __init__(self, *, name, input_datafield_name, output_datafield_name, threshold_value):
-        super(ThresholdProcessor, self).__init__(name=name)
+    def __init__(self, *, name, input_datafield_name, output_datafield_name, threshold_value, parent_names):
+        super(ThresholdProcessor, self).__init__(name=name, parent_names=parent_names)
         self.input_datafield_name = input_datafield_name
         self.output_datafield_name = output_datafield_name
         self.threshold_value = threshold_value

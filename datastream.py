@@ -5,13 +5,11 @@ from .datatool import DataTool
 
 class DataStream(DataTool):
     def __init__(self, *, name, daily_data_path, run_name, file_prefix):
-        super(DataStream, self).__init__(name=name, datatool_type=DataTool.DATASTREAM)
+        super(DataStream, self).__init__(name=name, datatool_type=DataTool.DATASTREAM, parent_names=None)
         self.daily_path = daily_data_path
         self.run_name = run_name
         self.file_prefix = file_prefix
         self.data_path = Path(self.daily_path, 'data', run_name, self.name)
-        self.child_name_list = []
-        self.parent_name_list = []
 
     def load_shot(self, shot_num):
         file_name = f'{self.file_prefix}_{shot_num:05d}.h5'

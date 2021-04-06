@@ -298,7 +298,7 @@ class DataModel(Rebuildable):
             else:
                 qprint(f'OLD and NEW {datatool_type} differ. overwrite set to {overwrite}', quiet)
                 if overwrite:
-                    print(f'Using NEW {datatool_type}.')
+                    print(f'Using NEW {datatool_type}: {datatool_name}.')
                     self.datatool_dict[datatool_name] = datatool
                     datatool.set_datamodel(datamodel=self)
                     print(f'Re-running the datamodel may result in overwriting datamodel data. ')
