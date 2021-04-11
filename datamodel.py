@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import datetime
 import matplotlib.pyplot as plt
@@ -7,12 +8,13 @@ from .datatool import Rebuildable, DataTool
 from .utils import qprint, get_shot_list_from_point, dict_compare, get_shot_labels
 
 
-def get_datamodel(*, datamodel_path=None, run_name, datamodel_name='datamodel', num_points,
-                  run_doc_string, overwrite_run_doc_string=False):
-    try:
-        if not datamodel_path:
-            datamodel_path = Path.cwd()
-        datamodel_path = Path(datamodel_path, f'{run_name}-{datamodel_name}.p')
+def get_datamodel(*, datamodel_dir=None, run_name, datamodel_name='datamodel', num_points,
+                  run_doc_string, overwrite_run_doc_string=False, reset=False):
+    if datamodel_dir is None:
+        datamodel_dir = Path.cwd()
+    datamodel_path = Path(datamodel_dir, f'{run_name}-{datamodel_name}.p')
+    old_datamodel_exists = datamodel_path.exists()
+    if old_datamodel_exists and not reset:
         datamodel = DataModel.load_datamodel(datamodel_path)
         if num_points != datamodel.num_points:
             raise ValueError(f'Specified num_points ({num_points}) does not match num_points for saved datamodel '
@@ -23,12 +25,17 @@ def get_datamodel(*, datamodel_path=None, run_name, datamodel_name='datamodel', 
                 print('Overwriting run_doc_string.')
                 datamodel.run_doc_string = run_doc_string
         return datamodel
-    except FileNotFoundError as e:
-        print(e)
-        print('Creating new datamodel')
-        datamodel = DataModel(run_name=run_name, num_points=num_points,
-                              run_doc_string=run_doc_string)
-        return datamodel
+    elif old_datamodel_exists and reset:
+        datamodel_h5_path = Path(datamodel_dir, f'{run_name}-{datamodel_name}.h5')
+        print(f'Reseting datamodel by deleting the datamodel files:\n'
+              f'{datamodel_path}\n'
+              f'{datamodel_h5_path}')
+        os.remove(datamodel_path)
+        os.remove(datamodel_h5_path)
+    print('Creating new datamodel')
+    datamodel = DataModel(run_name=run_name, num_points=num_points,
+                          run_doc_string=run_doc_string)
+    return datamodel
 
 
 def load_datamodel(*, datamodel_path=None, run_name, datamodel_name='datamodel'):
