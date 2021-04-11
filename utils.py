@@ -1,6 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
-from .tools.smart_gaussian2d_fit import fit_gaussian2d
 
 
 def get_data_min_max(data):
