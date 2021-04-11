@@ -142,8 +142,7 @@ class DataModel(Rebuildable):
         self.num_points = num_points
         self.run_doc_string = run_doc_string
 
-        self.num_shots = 0
-        self.last_handled_shot = -1
+        self.num_handled_shots = 0
 
         self.datatool_dict = dict()
 
@@ -186,11 +185,11 @@ class DataModel(Rebuildable):
         print('Beginning continuous running of datamodel.')
         waiting_message_is_current = False
         while True:
-            self.get_num_shots()
-            old_last_handled_shot = self.last_handled_shot
-            if old_last_handled_shot + 1 == self.num_shots:
+            raw_num_shots = self.get_num_raw_shots()
+            old_num_handled_shots = self.num_handled_shots
+            if old_num_handled_shots == raw_num_shots:
                 if not waiting_message_is_current:
-                    shot_key, loop_key, point_key = get_shot_labels(old_last_handled_shot + 1, self.num_points)
+                    shot_key, loop_key, point_key = get_shot_labels(old_num_handled_shots, self.num_points)
                     time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
                     print(f'{time_string} -- .. Waiting for data: {shot_key} - {loop_key} - {point_key} ..')
                     waiting_message_is_current = True
@@ -200,8 +199,7 @@ class DataModel(Rebuildable):
                 waiting_message_is_current = False
                 plt.pause(0.01)
 
-    def run(self, quiet=False, handler_quiet=False, save_every_shot=False,
-            raw_data_access=True, override_datamodel_dir=None):
+    def run(self, quiet=False, handler_quiet=False, save_every_shot=False, override_datamodel_dir=None):
         """ Run the DataModel to process the raw data through Processors, Aggregators, Reporters.
 
         parameters
@@ -218,31 +216,32 @@ class DataModel(Rebuildable):
             True. This can be set to False to suppress this behavior and only save after processing all current data.
             (Default is False)
         """
-        if raw_data_access is True:
-            self.get_num_shots()
-        if self.last_handled_shot + 1 == self.num_shots:
+        raw_num_shots = self.get_num_raw_shots()
+        if self.num_handled_shots == raw_num_shots:
             print('No new data.')
+            return
 
-        for shot_num in range(self.last_handled_shot + 1, self.num_shots):
-            shot_key, loop_key, point_key = get_shot_labels(self.last_handled_shot + 1, self.num_points)
+        for shot_num in range(self.num_handled_shots, raw_num_shots):
+            shot_key, loop_key, point_key = get_shot_labels(shot_num, self.num_points)
             time_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
             qprint(f'{time_string} -- ** Processing {shot_key} - {loop_key} - {point_key} **', quiet=quiet)
             self.process_data(shot_num, quiet=handler_quiet)
             self.aggregate_data(shot_num, quiet=handler_quiet)
             self.report_single_shot(shot_num, quiet=handler_quiet)
-            self.last_handled_shot = shot_num
+            self.num_handled_shots += 1
             if save_every_shot:
                 self.save_datamodel(override_datamodel_dir=override_datamodel_dir)
         self.save_datamodel(override_datamodel_dir=override_datamodel_dir)
         self.report_point_data()
 
-    def get_num_shots(self):
+    def get_num_raw_shots(self):
         """Query each datastream for its number of saved shots. Set self.num_shots to the minimal value."""
-        num_shots_list = []
+        raw_num_shots_list = []
         for datastream in self.get_datatool_of_type(DataTool.DATASTREAM):
-            num_shots = datastream.count_shots()
-            num_shots_list.append(num_shots)
-        self.num_shots = min(num_shots_list)
+            raw_num_shots = datastream.count_shots()
+            raw_num_shots_list.append(raw_num_shots)
+        raw_num_shots = min(raw_num_shots_list)
+        return raw_num_shots
 
     def process_data(self, shot_num, quiet=False):
         """ Run each Processor on shot_num. quiet=True suppresses the ShotHandler messages."""
@@ -289,7 +288,7 @@ class DataModel(Rebuildable):
             datatool.set_datamodel(datamodel=self)
             if not rebuilding:
                 if datatool_type == 'shot_datafield':
-                    self.last_handled_shot = -1
+                    self.num_handled_shots = 0
         elif datatool_exists:
             qprint(f'WARNING! {datatool_type} "{datatool_name}" already exists in datamodel.', quiet)
             old_datatool = self.datatool_dict[datatool_name]
@@ -303,7 +302,7 @@ class DataModel(Rebuildable):
                     datatool.set_datamodel(datamodel=self)
                     print(f'Re-running the datamodel may result in overwriting datamodel data. ')
                     self.reset_list.append(datatool_name)
-                    self.last_handled_shot = -1
+                    self.num_handled_shots = 0
                 elif not overwrite:
                     qprint(f'Using OLD {datatool_type}.', quiet)
 
@@ -315,11 +314,6 @@ class DataModel(Rebuildable):
         for datatool_name in self.reset_list:
             datatool = self.datatool_dict[datatool_name]
             datatool.reset()
-            # print(f'{datatool.datatool_type}: {datatool.name}')
-            # for child_datatool_name in datatool.get_descendents():
-            #     child_datatool = self.datatool_dict[child_datatool_name]
-            #     child_datatool.reset()
-            #     print(f'{child_datatool.datatool_type}: {child_datatool.name}')
 
     def get_data(self, datafield_name, data_index):
         datafield = self.datatool_dict[datafield_name]
@@ -327,7 +321,7 @@ class DataModel(Rebuildable):
             data = datafield.get_data(data_index)
         else:
             if data_index == 'all':
-                shot_list = range(self.num_shots)
+                shot_list = range(self.num_handled_shots)
             else:
                 shot_list = data_index
             data = []
@@ -338,7 +332,7 @@ class DataModel(Rebuildable):
 
     def get_data_by_point(self, datafield_name, point_num, shots=None):
         if not shots:
-            shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, self.num_shots)
+            shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, self.num_handled_shots)
         else:
             shot_list, num_loops = get_shot_list_from_point(point_num, self.num_points, max(shots) + 1)
             shot_list = sorted(set(shot_list).intersection(shots))
@@ -370,25 +364,18 @@ class DataModel(Rebuildable):
 
     def package_rebuild_dict(self):
         super(DataModel, self).package_rebuild_dict()
-        self.object_data_dict['num_shots'] = self.num_shots
-        self.object_data_dict['last_handled_shot'] = self.last_handled_shot
-
+        self.object_data_dict['num_handled_shots'] = self.num_handled_shots
         self.object_data_dict['datatools'] = dict()
         for datatool in self.datatool_dict.values():
             datatool.package_rebuild_dict()
             self.object_data_dict['datatools'][datatool.name] = datatool.rebuild_dict
-
         self.object_data_dict['data_dict'] = self.data_dict
 
     def rebuild_object_data(self, object_data_dict):
         super(DataModel, self).rebuild_object_data(object_data_dict)
-        self.num_shots = object_data_dict['num_shots']
-        self.last_handled_shot = object_data_dict['last_handled_shot']
-
+        self.num_handled_shots = object_data_dict['num_handled_shots']
         self.data_dict = object_data_dict['data_dict']
-
         for datatool_rebuild_dict in object_data_dict['datatools'].values():
             datatool = Rebuildable.rebuild(rebuild_dict=datatool_rebuild_dict)
             self.add_datatool(datatool, overwrite=False, rebuilding=True, quiet=True)
-
         self.link_datatools()
