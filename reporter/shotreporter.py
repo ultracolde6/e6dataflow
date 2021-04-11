@@ -8,8 +8,9 @@ from ..utils import get_data_min_max, get_shot_labels
 
 
 class ShotReporter(Reporter, ShotHandler):
-    def __init__(self, *, name, datafield_name_list, layout, save_data, min_lim=None, max_lim=None):
-        super(ShotReporter, self).__init__(name=name, reporter_type=DataTool.SINGLE_SHOT_REPORTER,
+    def __init__(self, *, name, parent_names, datafield_name_list, layout, save_data, min_lim=None, max_lim=None):
+        super(ShotReporter, self).__init__(name=name, parent_names=parent_names,
+                                           reporter_type=DataTool.SINGLE_SHOT_REPORTER,
                                            datafield_name_list=datafield_name_list, layout=layout,
                                            save_data=save_data)
         self.min_lim = min_lim
@@ -85,8 +86,9 @@ class ShotReporter(Reporter, ShotHandler):
 
 
 class ImageShotReporter(ShotReporter):
-    def __init__(self, *, name, datafield_name_list, layout, save_data, roi_dict):
-        super(ImageShotReporter, self).__init__(name=name, datafield_name_list=datafield_name_list, layout=layout,
+    def __init__(self, *, name, parent_names, datafield_name_list, layout, save_data, roi_dict):
+        super(ImageShotReporter, self).__init__(name=name, parent_names=parent_names,
+                                                datafield_name_list=datafield_name_list, layout=layout,
                                                 save_data=save_data)
         self.roi_dict = roi_dict
 

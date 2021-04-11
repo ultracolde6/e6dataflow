@@ -8,8 +8,8 @@ class Reporter(DataTool):
     LAYOUT_VERTICAL = 'vertical'
     LAYOUT_GRID = 'grid'
 
-    def __init__(self, *, name, reporter_type, datafield_name_list, layout, save_data, close_plots=False):
-        super(Reporter, self).__init__(name=name, datatool_type=reporter_type)
+    def __init__(self, *, name, parent_names, reporter_type, datafield_name_list, layout, save_data, close_plots=False):
+        super(Reporter, self).__init__(name=name, datatool_type=reporter_type, parent_names=parent_names)
         self.datafield_name_list = datafield_name_list
         self.layout = layout
         self.save_data = save_data
