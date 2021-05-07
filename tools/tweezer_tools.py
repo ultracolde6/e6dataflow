@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 from pathlib import Path
 import h5py
+import pickle
 
 from e6dataflow.tools.smart_gaussian2d_fit import fit_gaussian2d
 from e6dataflow.utils import make_centered_roi, get_shot_list_from_point
@@ -168,26 +169,36 @@ def get_avg_frame_over_loops(data_dir, data_prefix, point_num, frame_num, num_po
 
 def get_roi_dict(data_dir, data_prefix, num_points, pzt_point_frame_dict,
                  vert_center_list, horiz_center_list,
-                 vert_search_span, horiz_search_span, lock_span=True, span_output_factor=3.0, max_shot_num=None):
+                 vert_search_span, horiz_search_span, lock_span=True,
+                 span_output_factor=3.0, max_shot_num=None,
+                 save_dir=None):
+    if save_dir is not None:
+        save_dir.mkdir(parents=True, exist_ok=True)
     first_shot_h5_path = Path(data_dir, f'{data_prefix}_00000.h5')
     blank_frame = np.zeros_like(get_frame_from_h5(first_shot_h5_path, frame_num=0))
     num_tweezer = len(vert_center_list)
     output_pzt_roi_dict = dict()
+    print('Beginning loops')
     for pzt_key, point_frame_tuple_list in pzt_point_frame_dict.items():
         num_elements = len(point_frame_tuple_list)
+        print(f'starting pzt_key = {pzt_key}, num_elements = {num_elements}')
         tot_avg_frame = 0 * blank_frame
         roi_tuple_list = []
         roi_tuple_string_list = []
         for point_frame_tuple in point_frame_tuple_list:
             point_num = point_frame_tuple[0]
             frame_num = point_frame_tuple[1]
+            print(f'point_frame_tuple = {point_frame_tuple}, averaging now')
             loop_avg_frame = get_avg_frame_over_loops(data_dir, data_prefix, point_num, frame_num, num_points,
                                                       max_shot_num=max_shot_num)
             tot_avg_frame += loop_avg_frame / num_elements
+            print('averaging done')
+        print('plot created')
         fig = plt.figure()
         ax = fig.add_subplot(1, 1, 1)
         ax.imshow(tot_avg_frame)
         for tweezer_num in range(num_tweezer):
+            print(f'tweezer - {tweezer_num} fit starting')
             vert_center = vert_center_list[tweezer_num]
             horiz_center = horiz_center_list[tweezer_num]
             vert_slice, horiz_slice, success = fit_for_roi(tot_avg_frame,
@@ -196,6 +207,7 @@ def get_roi_dict(data_dir, data_prefix, num_points, pzt_point_frame_dict,
                                                            horiz_search_span=horiz_search_span,
                                                            lock_span=lock_span,
                                                            span_output_factor=span_output_factor)
+            print('fit completed')
             roi_tuple_list.append((vert_slice, horiz_slice))
             roi_tuple_string = f'({vert_slice.start}, {vert_slice.stop}) x ({horiz_slice.start}, {horiz_slice.stop})'
             if not success:
@@ -211,11 +223,21 @@ def get_roi_dict(data_dir, data_prefix, num_points, pzt_point_frame_dict,
                                          linewidth=1, edgecolor='w', facecolor='none')
             ax.add_patch(rect_guess)
             ax.add_patch(rect_fit)
+            print('ROI added to plot')
         roi_string = ('ROI List\n (vert_start, vert_stop) x (horiz_start, horiz_stop)\n'
                       + '\n'.join([roi_tuple_string for roi_tuple_string in roi_tuple_string_list]))
         ax.text(x=2, y=0.5, s=roi_string, transform=ax.transAxes, verticalalignment='center')
+        if save_dir is not None:
+            fig_path = Path(save_dir, f'pzt setting - {pzt_key}.png')
+            fig.savefig(fig_path)
         output_pzt_roi_dict[pzt_key] = roi_tuple_list
+        print('next pzt setting')
 
+    if save_dir is not None:
+        pzt_roi_dict_path = Path(save_dir, f'pzt_roi_dict.p')
+        pickle.dump(output_pzt_roi_dict, open(pzt_roi_dict_path, 'wb'))
+        pzt_roi_dict_path = Path(save_dir, f'pzt_point_frame_dict.p')
+        pickle.dump(pzt_point_frame_dict, open(pzt_roi_dict_path, 'wb'))
     return output_pzt_roi_dict
 
 
@@ -223,7 +245,8 @@ def auto_roi(data_dir, data_prefix,
              num_tweezers, num_points, frame_list, num_pzt, mode,
              first_tweezer_vert, first_tweezer_horiz,
              last_tweezer_vert, last_tweezer_horiz,
-             vert_search_span, horiz_search_span, lock_span):
+             vert_search_span, horiz_search_span, lock_span, max_shot_num=None,
+             num_outer_point_loop=None, num_inner_point_loop=None, save_dir=None):
     vert_center_list, horiz_center_list = interpolate_tweezer_positions(first_tweezer_vert,
                                                                         first_tweezer_horiz,
                                                                         last_tweezer_vert,
@@ -231,7 +254,9 @@ def auto_roi(data_dir, data_prefix,
                                                                         num_tweezers)
 
     pzt_point_frame_dict = generate_pzt_point_frame_dict(num_pzt=num_pzt, num_points=num_points,
-                                                         frame_list=frame_list, mode=mode)
+                                                         frame_list=frame_list, mode=mode,
+                                                         num_outer_point_loop=num_outer_point_loop,
+                                                         num_inner_point_loop=num_inner_point_loop)
 
     pzt_roi_dict = get_roi_dict(data_dir=data_dir, data_prefix=data_prefix,
                                 num_points=num_points,
@@ -240,7 +265,8 @@ def auto_roi(data_dir, data_prefix,
                                 horiz_center_list=horiz_center_list,
                                 vert_search_span=vert_search_span,
                                 horiz_search_span=horiz_search_span,
-                                lock_span=lock_span)
+                                lock_span=lock_span, max_shot_num=max_shot_num,
+                                save_dir=save_dir)
     return pzt_roi_dict, pzt_point_frame_dict
 
 

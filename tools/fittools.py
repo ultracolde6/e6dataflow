@@ -53,7 +53,6 @@ def e6_fit(output_data, fit_func, param_guess, input_data=None, param_keys=None,
 
     if input_data is None:
         input_data = np.indices(output_data.shape)
-    input_data = input_data
     output_data = np.nan_to_num(output_data)
 
     def img_cost_func(fit_params):

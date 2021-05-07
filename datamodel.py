@@ -33,7 +33,7 @@ def get_datamodel(*, datamodel_dir=None, run_name, datamodel_name='datamodel', n
         os.remove(datamodel_path)
         os.remove(datamodel_h5_path)
     print('Creating new datamodel')
-    datamodel = DataModel(run_name=run_name, num_points=num_points,
+    datamodel = DataModel(name=datamodel_name, run_name=run_name, num_points=num_points,
                           run_doc_string=run_doc_string)
     return datamodel
 
@@ -157,15 +157,22 @@ class DataModel(Rebuildable):
         self.data_dict['shot_data'] = dict()
         self.data_dict['point_data'] = dict()
 
-        data_h5_path = Path(self.datamodel_dir, f'{self.run_name}-{self.name}.h5')
-        if not data_h5_path.exists():
-            self.data_h5 = h5py.File(data_h5_path, 'a')
+        self.data_h5_path = Path(self.datamodel_dir, f'{self.run_name}-{self.name}.h5')
+        if not self.data_h5_path.exists():
+            self.data_h5 = h5py.File(self.data_h5_path, 'a')
             self.data_h5.create_group('shot_data')
             self.data_h5.create_group('point_data')
+            self.data_h5.close()
         else:
-            self.data_h5 = h5py.File(data_h5_path, 'a')
+            self.data_h5 = None
 
         self.reset_list = []
+
+    def __enter__(self):
+        self.data_h5 = h5py.File(self.data_h5_path, 'a')
+
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        self.data_h5.close()
 
     def get_datatool_of_type(self, datatool_type):
         """ Get all DataTools from datatool_dict matching datatool.datattol_type == datatool_type. Possible
@@ -385,4 +392,5 @@ class DataModel(Rebuildable):
         for datatool_rebuild_dict in object_data_dict['datatools'].values():
             datatool = Rebuildable.rebuild(rebuild_dict=datatool_rebuild_dict)
             self.add_datatool(datatool, overwrite=False, rebuilding=True, quiet=True)
-        self.link_datatools()
+        with self:
+            self.link_datatools()
